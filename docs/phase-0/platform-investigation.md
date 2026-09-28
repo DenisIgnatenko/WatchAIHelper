@@ -92,6 +92,7 @@ VisionKit's scanner is kept as a Phase 6 experiment: better image quality for do
 | 6.3 | **Russian and Danish are NOT listed for Scribble** and not listed for On-device Dictation. On-device dictation is irrelevant for us because the Watch always needs the network to reach the backend anyway. | VERIFIED (docs) | same |
 | 6.4 | Keyboards of several languages can be enabled; the user switches by swiping up from the bottom of the keyboard. | VERIFIED (docs) | same as 6.1 |
 | 6.5 | `TextFieldLink` (watchOS 9+): "a control that requests text input from the user when pressed". It gives a one-tap "Ask" button that opens system text input. | VERIFIED (docs) | [TextFieldLink](https://developer.apple.com/documentation/swiftui/textfieldlink) |
+| 6.7 | Applying `.autocorrectionDisabled(true)` to the view hierarchy made `TextFieldLink` stop working (tap no longer produced input; no requests reached the backend). Reverted. Autocorrection must be turned off in the Watch system keyboard settings instead. | VERIFIED (device), 2026-09-28, watchOS 27 | - |
 | 6.6 | Older sources (watchOS 11 era) state that there is no Russian or Danish keyboard on the Watch. This contradicts 6.2 and is treated as outdated. | Superseded by 6.2 | - |
 
 **PROPOSAL.** No custom keyboard (spec 14). Use `TextFieldLink` / `TextField`, which delegate to the system input UI.
