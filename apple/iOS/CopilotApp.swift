@@ -23,6 +23,10 @@ struct CopilotApp: App {
       CameraView().environment(store)
      }
      .task { await store.refresh() }
+     // aicopilot://camera - from a Shortcuts "Open URLs" action on the Action Button.
+     .onOpenURL { url in
+      if url.scheme == "aicopilot", url.host == "camera" { showCamera = true }
+     }
      .onChange(of: scenePhase) { _, phase in
       guard phase == .active else { return }
       // "Ask with Camera" (Action Button / Control / Siri) asked for the camera.

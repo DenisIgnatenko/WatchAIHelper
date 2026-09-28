@@ -45,6 +45,11 @@ targets:
    properties:
     CopilotHost: $(COPILOT_HOST)
     CopilotDeviceToken: $(COPILOT_DEVICE_TOKEN)
+    # Custom URL scheme: aicopilot://camera opens the camera. Used by a Shortcuts "Open URLs" action
+    # assigned to the iPhone Action Button (reliable path; see docs PI 2.6).
+    CFBundleURLTypes:
+     - CFBundleURLName: aicopilot
+       CFBundleURLSchemes: [aicopilot]
   dependencies:
    - package: CopilotKit
      product: CopilotCore
