@@ -14,7 +14,7 @@ import OpenAPIURLSession
 /// - The generated `Client` returns an enum per operation (`.ok`, `.notFound`, `.undocumented(...)`),
 ///  so every documented HTTP status must be handled explicitly - the compiler checks it with `switch`.
 public struct LiveCopilotService: CopilotService {
- private let client: Client
+ let client: Client
 
  /// - Parameters:
  ///  - baseURL: e.g. `https://203.0.113.10`.
@@ -117,7 +117,7 @@ public struct LiveCopilotService: CopilotService {
 
  /// Runs a generated-client call and turns transport failures (offline, timeout, TLS) into `.unavailable`,
  /// so the UI deals with one error type. Task cancellation passes through unchanged.
- private func call<Output>(_ operation: () async throws -> Output) async throws -> Output {
+ func call<Output>(_ operation: () async throws -> Output) async throws -> Output {
   do {
    return try await operation()
   } catch is CancellationError {
@@ -129,7 +129,7 @@ public struct LiveCopilotService: CopilotService {
   }
  }
 
- private static func error(forStatus status: Int) -> CopilotServiceError {
+ static func error(forStatus status: Int) -> CopilotServiceError {
   status == 404 ? .notFound : .unavailable
  }
 }

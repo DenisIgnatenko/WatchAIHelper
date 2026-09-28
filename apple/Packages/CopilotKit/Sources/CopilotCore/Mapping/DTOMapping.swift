@@ -64,6 +64,30 @@ enum DTOMapping {
   )
  }
 
+ static func draftDetail(_ dto: Components.Schemas.DraftDetail) throws -> DraftDetail {
+  DraftDetail(
+   id: try uuid(dto.id, "draft.id"),
+   conversationId: try uuid(dto.conversationId, "draft.conversationId"),
+   text: dto.text,
+   attachments: try dto.attachments.map(attachment)
+  )
+ }
+
+ static func attachment(_ dto: Components.Schemas.Attachment) throws -> AttachmentInfo {
+  let state: AttachmentInfo.State = switch dto.state {
+  case .pending: .pending
+  case .uploaded: .uploaded
+  case .failed: .failed
+  }
+  return AttachmentInfo(
+   id: try uuid(dto.id, "attachment.id"),
+   position: dto.position,
+   state: state,
+   source: dto.source == .camera ? .camera : .photoLibrary,
+   byteSize: dto.byteSize
+  )
+ }
+
  /// The OpenAPI generator represents `format: uuid` as `String`; parse it once, here.
  private static func uuid(_ value: String, _ field: String) throws -> UUID {
   guard let id = UUID(uuidString: value) else { throw InvalidPayload(field: field) }

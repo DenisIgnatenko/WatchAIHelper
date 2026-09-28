@@ -47,6 +47,8 @@ public protocol CopilotService: Sendable {
 public enum CopilotServiceError: Error, Equatable, Sendable {
  /// The draft was already sent from another device (backend `409`). The user's typed text must be kept.
  case draftAlreadySubmitted
+ /// The draft was already sent; new images belong to the next draft (backend `409`).
+ case draftNotEditable
  /// The draft has neither text nor attachments.
  case emptyDraft
  case notFound

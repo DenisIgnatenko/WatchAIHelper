@@ -39,6 +39,12 @@ targets:
   platform: iOS
   # iOSShared: code compiled into both the iOS app and its widget extension (AskWithCameraIntent).
   sources: [iOS, iOSShared]
+  # Backend connection from the xcconfig (see Config/Base.xcconfig). Merged with the generated Info.plist.
+  info:
+   path: iOS/Info.plist
+   properties:
+    CopilotHost: $(COPILOT_HOST)
+    CopilotDeviceToken: $(COPILOT_DEVICE_TOKEN)
   dependencies:
    - package: CopilotKit
      product: CopilotCore
@@ -54,6 +60,7 @@ targets:
     INFOPLIST_KEY_CFBundleDisplayName: AI Copilot
     INFOPLIST_KEY_UILaunchScreen_Generation: YES
     INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+    INFOPLIST_KEY_NSCameraUsageDescription: AI Copilot photographs pages and documents to answer questions about them.
 
  AICopilotWatch:
   type: application

@@ -12,21 +12,10 @@ enum AppConfiguration {
   if LaunchOptions.demoConversation {
    return MockCopilotService(scenario: .photosReady(3), seedDemoConversation: true)
   }
-  guard
-   let host = infoValue("CopilotHost"),
-   let token = infoValue("CopilotDeviceToken"),
-   let baseURL = URL(string: "https://\(host)")
-  else {
+  guard let configuration = BackendConfiguration.fromInfoPlist() else {
    // No backend configured: simulator and UI work keep running on the mock.
    return MockCopilotService(scenario: .photosUploading(3))
   }
-  return LiveCopilotService(baseURL: baseURL, deviceToken: token)
- }
-
- /// A non-empty Info.plist string, or nil (unset xcconfig variables arrive as empty strings).
- private static func infoValue(_ key: String) -> String? {
-  guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String else { return nil }
-  let trimmed = value.trimmingCharacters(in: .whitespaces)
-  return trimmed.isEmpty ? nil : trimmed
+  return LiveCopilotService(baseURL: configuration.baseURL, deviceToken: configuration.deviceToken)
  }
 }

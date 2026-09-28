@@ -163,6 +163,7 @@ final class WatchStore {
  private static func describe(_ error: Error) -> String {
   switch error as? CopilotServiceError {
   case .draftAlreadySubmitted: "Already sent from another device."
+  case .draftNotEditable: "Already sent."
   case .emptyDraft: "Nothing to send."
   case .notFound: "Not found."
   case .unauthorized: "Device not authorized."
