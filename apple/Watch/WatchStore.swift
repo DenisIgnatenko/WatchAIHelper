@@ -70,6 +70,13 @@ final class WatchStore {
   }
  }
 
+ /// True while something on the main screen changes without our own actions:
+ /// photos are uploading from the iPhone. Request progress is tracked separately by the observer.
+ var needsPeriodicRefresh: Bool {
+  if case .uploading = home?.draft.readiness { return true }
+  return false
+ }
+
  // MARK: - Actions
 
  /// Explicit Send (Invariant 5). Used for all three Watch cases:

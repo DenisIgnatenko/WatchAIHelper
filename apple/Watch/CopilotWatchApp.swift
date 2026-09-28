@@ -25,6 +25,8 @@ struct CopilotWatchApp: App {
     // Makes the store available to every view below via `@Environment(WatchStore.self)`
     // (a lightweight dependency injection built into SwiftUI).
     .environment(store)
+    // App-wide accent color for primary actions.
+    .tint(CompactStyle.accent)
   }
  }
 }
@@ -53,6 +55,18 @@ struct RootView: View {
   .onChange(of: scenePhase) { _, phase in
    if phase == .active {
     Task { await store.refresh() }
+   }
+  }
+  // Foreground-only polling while photos are uploading from the iPhone, so "Uploading 1/3…"
+  // turns into "3 photos ready" without user action. `.task(id:)` restarts when the scene phase
+  // changes and is cancelled automatically, so nothing runs while the app is in the background.
+  .task(id: scenePhase) {
+   guard scenePhase == .active else { return }
+   while !Task.isCancelled {
+    try? await Task.sleep(for: .seconds(3))
+    if store.needsPeriodicRefresh {
+     await store.refresh()
+    }
    }
   }
  }

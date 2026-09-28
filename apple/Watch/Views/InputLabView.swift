@@ -35,6 +35,7 @@ struct InputLabView: View {
     }
    }
   }
+  .compactList()
   .navigationTitle("Input test")
  }
 }

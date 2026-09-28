@@ -192,13 +192,15 @@ The client code hides this behind one abstraction, so APNs can be added later wi
 
 ## 14. Device validation checklist (owner of each item: the user, with a test build from Phase 1)
 
-- [ ] V1. Watch: add the Russian and Danish keyboards (Watch app on iPhone > General > Keyboards). Type "Почему здесь Redis?", "Hvad betyder selvom?", "why kafka?" and check that the Unicode round-trip is correct.
-- [ ] V2. Watch: dictate the same phrases in each language.
-- [ ] V3. Watch: continue input on the iPhone ("Apple Watch Keyboard Input").
-- [ ] V4. A Personal-Team-signed app installs on both devices; note the profile expiry date.
+Results 2026-09-28 (owner, Apple Watch Ultra 2 / iPhone 17 Pro Max): V1-V6 confirmed working. V7, V8 open.
+
+- [x] V1. Watch: add the Russian and Danish keyboards (Watch app on iPhone > General > Keyboards). Type "Почему здесь Redis?", "Hvad betyder selvom?", "why kafka?" and check that the Unicode round-trip is correct.
+- [x] V2. Watch: dictate the same phrases in each language.
+- [x] V3. Watch: continue input on the iPhone ("Apple Watch Keyboard Input").
+- [x] V4. A Personal-Team-signed app installs on both devices; note the profile expiry date.
 - [x] V5a. The iOS App Shortcut in Shortcuts / Action Button > Shortcut: **not listed** (2.4).
-- [ ] V5b. The "Ask with Camera" Control can be assigned to the iPhone Action Button and opens the app.
+- [x] V5b. The "Ask with Camera" Control can be assigned to the iPhone Action Button and opens the app.
 - [x] V6a. The watchOS App Shortcut via Action Button > Shortcut: **not possible** (7.4).
-- [ ] V6b. The "Ask AI" Control can be assigned to the Watch Action Button and opens the app.
+- [x] V6b. The "Ask AI" Control can be assigned to the Watch Action Button and opens the app.
 - [ ] V7. "Return to Clock" per-app setting exists on watchOS 27.
 - [ ] V8 (Phase 2). H1 / H2 / H3 result delivery timings with the wrist down.

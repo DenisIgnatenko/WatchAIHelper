@@ -18,27 +18,34 @@ struct ConversationView: View {
      }
 
      if let request = store.activeRequest, !request.state.isTerminal {
-      HStack {
-       ProgressView().frame(width: 20)
+      HStack(spacing: 6) {
+       ProgressView().frame(width: 16, height: 16)
        Text(request.state.statusText).foregroundStyle(.secondary)
       }
+      .font(CompactStyle.controlFont)
      }
 
-     // Follow-ups only under the latest answer (spec 16, max three).
-     if let last = store.messages.last, last.role == .assistant, store.activeRequest?.state.isTerminal ?? true {
-      ForEach(last.suggestedActions.prefix(3), id: \.self) { action in
-       Button(action.title) {
-        Task { await store.send(text: action.prompt) }
+     // Controls are compact; the answer text above keeps the regular font (readability first).
+     VStack(spacing: 4) {
+      // Follow-ups only under the latest answer (spec 16, max three).
+      if let last = store.messages.last, last.role == .assistant, store.activeRequest?.state.isTerminal ?? true {
+       ForEach(last.suggestedActions.prefix(3), id: \.self) { action in
+        Button(action.title) {
+         Task { await store.send(text: action.prompt) }
+        }
        }
       }
-     }
 
-     TextFieldLink(prompt: Text("Follow-up question")) {
-      Label("Ask", systemImage: "mic.fill")
-     } onSubmit: { text in
-      Task { await store.send(text: text) }
+      TextFieldLink(prompt: Text("Follow-up question")) {
+       Label("Ask", systemImage: "mic.fill")
+      } onSubmit: { text in
+       Task { await store.send(text: text) }
+      }
+      .id(bottomAnchor)
      }
-     .id(bottomAnchor)
+     .buttonStyle(.bordered)
+     .controlSize(.small)
+     .font(CompactStyle.controlFont)
     }
    }
    .onAppear { proxy.scrollTo(bottomAnchor, anchor: .bottom) }

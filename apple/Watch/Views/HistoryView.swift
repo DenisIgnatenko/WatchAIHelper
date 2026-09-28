@@ -33,6 +33,7 @@ struct HistoryView: View {
     Button("Draft: empty") { Task { await store.resetMock(scenario: .empty) } }
    }
   }
+  .compactList()
   .navigationTitle("History")
   .task { await store.loadConversations() }
  }

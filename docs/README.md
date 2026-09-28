@@ -10,5 +10,6 @@ Private AI assistant for Apple Watch Ultra 2 and iPhone, backed by a private bac
 ## Current status
 
 - Phase 0 (investigation and design): **done**.
-- Phase 1 (Watch spike with mock backend): **in progress** - app runs on the devices; device checks V1-V7 pending.
+- Phase 1 (Watch spike with mock backend): **done** - device checks V1-V6 passed (V7 open, V8 belongs to Phase 2).
+- Next: Phase 2 - real backend (Java/Spring) + OpenAI, text only.
 - Apple clients: see [../apple/README.md](../apple/README.md).
