@@ -114,6 +114,15 @@ private struct CameraPreview: UIViewRepresentable {
   let view = PreviewView()
   view.previewLayer.session = session
   view.previewLayer.videoGravity = .resizeAspectFill
+  #if DEBUG
+  // Temporary diagnostics for the black-preview issue.
+  DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak view] in
+   guard let layer = view?.previewLayer else { return }
+   print("[Preview] frame=\(layer.frame) connection=\(layer.connection != nil)",
+    "enabled=\(layer.connection?.isEnabled ?? false) active=\(layer.connection?.isActive ?? false)",
+    "previewing=\(layer.isPreviewing) sessionRunning=\(layer.session?.isRunning ?? false)")
+  }
+  #endif
   return view
  }
 
