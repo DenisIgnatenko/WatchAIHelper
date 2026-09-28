@@ -54,6 +54,9 @@ final class DraftStore {
  private let observer: LongPollRequestObserver
  private var uploads: UploadManager!
  private var observation: Task<Void, Never>?
+ /// Registrations run one after another: the backend numbers images in registration order,
+ /// so this keeps the page order exactly as captured / selected (spec 27).
+ private var registrationChain: Task<Void, Never>?
 
  init(service: any CopilotService & DraftEditingService, makeUploads: (@escaping @Sendable (UploadManager.Event) -> Void) -> UploadManager) {
   self.service = service
@@ -144,20 +147,26 @@ final class DraftStore {
 
  // MARK: - Adding images (never starts AI inference - Invariant 2)
 
- /// Called when the user confirms a photo ("Use"). Prepares, registers and starts the background upload.
+ /// Called when the user confirms a photo ("Use") or picks one from the library.
+ /// Prepares (in parallel), registers (strictly in call order) and starts the background upload.
  func addPhoto(_ data: Data, source: AttachmentInfo.Source) {
   let id = UUID()
   local[id] = LocalImage(thumbnail: nil, phase: .preparing)
   unregistered.append(id)
-  Task { await prepareAndUpload(id: id, data: data, source: source) }
+  // Heavy work (decode 24 MP, resize, encode, hash) starts at once, off the main thread.
+  let preparation = Task.detached(priority: .userInitiated) {
+   try ImageNormalizer.prepare(data, id: id)
+  }
+  let previous = registrationChain
+  registrationChain = Task {
+   await previous?.value
+   await registerAndUpload(id: id, preparation: preparation, source: source)
+  }
  }
 
- private func prepareAndUpload(id: UUID, data: Data, source: AttachmentInfo.Source) async {
+ private func registerAndUpload(id: UUID, preparation: Task<PreparedImage, Error>, source: AttachmentInfo.Source) async {
   do {
-   // Heavy work (decode 24 MP, resize, encode, hash) off the main thread.
-   let prepared = try await Task.detached(priority: .userInitiated) {
-    try ImageNormalizer.prepare(data, id: id)
-   }.value
+   let prepared = try await preparation.value
    local[id]?.thumbnail = ImageNormalizer.thumbnail(of: prepared.fileURL)
    if draft == nil { await refresh() }
    guard let draftId = draft?.id else { throw CopilotServiceError.unavailable }

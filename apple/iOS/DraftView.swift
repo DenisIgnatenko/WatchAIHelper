@@ -1,4 +1,5 @@
 import CopilotCore
+import PhotosUI
 import SwiftUI
 
 /// iPhone main screen = the current draft of the active conversation (spec 23):
@@ -6,6 +7,8 @@ import SwiftUI
 struct DraftView: View {
  @Environment(DraftStore.self) private var store
  @Binding var showCamera: Bool
+ /// Items chosen in the system photo picker; converted into draft images, then cleared.
+ @State private var pickedItems: [PhotosPickerItem] = []
 
  private let columns = [GridItem(.adaptive(minimum: 96), spacing: 8)]
 
@@ -32,14 +35,25 @@ struct DraftView: View {
       }
      }
 
-     Button {
-      showCamera = true
-     } label: {
-      Label(store.tiles.isEmpty ? "Take photo" : "Add photo", systemImage: "camera.fill")
-       .frame(maxWidth: .infinity)
+     HStack {
+      Button {
+       showCamera = true
+      } label: {
+       Label(store.tiles.isEmpty ? "Take photo" : "Add photo", systemImage: "camera.fill")
+        .frame(maxWidth: .infinity)
+      }
+      // Photo Library (spec 21): several images at once, numbered in the order you tap them
+      // (`.ordered`), which becomes the page order. Picking never starts AI inference.
+      PhotosPicker(selection: $pickedItems, maxSelectionCount: 10, selectionBehavior: .ordered, matching: .images) {
+       Label("Photos", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
+      }
      }
      .buttonStyle(.bordered)
      .controlSize(.large)
+     .onChange(of: pickedItems) { _, items in
+      guard !items.isEmpty else { return }
+      Task { await addPicked(items) }
+     }
 
      TextField("Question (optional)", text: $store.text, axis: .vertical)
       .textFieldStyle(.roundedBorder)
@@ -83,6 +97,17 @@ struct DraftView: View {
     ToolbarItem(placement: .topBarTrailing) { ConversationMenu() }
    }
    .refreshable { await store.refresh() }
+  }
+ }
+
+ /// Loads the picked images in selection order and adds them to the draft.
+ private func addPicked(_ items: [PhotosPickerItem]) async {
+  pickedItems = []
+  for item in items {
+   // Original bytes (HEIC/JPEG); may download from iCloud Photos first.
+   if let data = try? await item.loadTransferable(type: Data.self) {
+    store.addPhoto(data, source: .photoLibrary)
+   }
   }
  }
 
