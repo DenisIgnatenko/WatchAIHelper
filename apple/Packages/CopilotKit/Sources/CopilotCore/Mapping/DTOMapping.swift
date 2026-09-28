@@ -20,7 +20,12 @@ enum DTOMapping {
  }
 
  static func conversation(_ dto: Components.Schemas.Conversation) throws -> Conversation {
-  Conversation(id: try uuid(dto.id, "conversation.id"), title: dto.title, updatedAt: dto.updatedAt)
+  Conversation(
+   id: try uuid(dto.id, "conversation.id"),
+   title: dto.title,
+   mode: dto.mode == .danishExam ? .danishExam : .general,
+   updatedAt: dto.updatedAt
+  )
  }
 
  static func draft(_ dto: Components.Schemas.DraftSummary) throws -> DraftSummary {

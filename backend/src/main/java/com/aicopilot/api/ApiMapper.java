@@ -5,6 +5,7 @@ import com.aicopilot.api.generated.model.AttachmentDto;
 import com.aicopilot.api.generated.model.AttachmentSourceDto;
 import com.aicopilot.api.generated.model.DraftDetailDto;
 import com.aicopilot.api.generated.model.ConversationDto;
+import com.aicopilot.api.generated.model.ConversationModeDto;
 import com.aicopilot.api.generated.model.DraftSummaryDto;
 import com.aicopilot.api.generated.model.HomeSnapshotDto;
 import com.aicopilot.api.generated.model.MessageDto;
@@ -69,7 +70,8 @@ class ApiMapper {
  }
 
  ConversationDto conversation(Conversation c) {
-  return new ConversationDto(c.id(), c.title(), time(c.updatedAt()));
+  var mode = c.mode() == Conversation.Mode.DANISH_EXAM ? ConversationModeDto.DANISH_EXAM : ConversationModeDto.GENERAL;
+  return new ConversationDto(c.id(), c.title(), mode, time(c.updatedAt()));
  }
 
  MessageDto message(Message m) {

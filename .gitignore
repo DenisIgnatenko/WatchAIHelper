@@ -36,3 +36,6 @@ deploy/app.jar
 
 # Local image storage of the backend (dev)
 backend/data/
+
+# Knowledge packs built from third-party documents (tools/knowledge); not stored in git
+knowledge/

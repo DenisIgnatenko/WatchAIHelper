@@ -8,7 +8,7 @@ openapi: 3.0.3
 # conversation deletion are added in the phases that need them (YAGNI).
 info:
  title: AI Copilot API
- version: 0.3.0
+ version: 0.4.0
  description: Private backend for the AI Copilot iPhone and Apple Watch apps.
 
 servers:
@@ -325,11 +325,19 @@ components:
 
   Conversation:
    type: object
-   required: [id, title, updatedAt]
+   required: [id, title, mode, updatedAt]
    properties:
     id: { type: string, format: uuid }
     title: { type: string }
+    mode: { $ref: "#/components/schemas/ConversationMode" }
     updatedAt: { type: string, format: date-time }
+
+  ConversationMode:
+   type: string
+   description: >
+    What the conversation is for, chosen at creation. danishExam adds the DU3 exam guide and the official
+    study materials to the AI's instructions.
+   enum: [general, danishExam]
 
   CreateConversationRequest:
    type: object
@@ -339,6 +347,8 @@ components:
      type: string
      format: uuid
      description: Client-generated id; makes the call idempotent.
+    mode:
+     $ref: "#/components/schemas/ConversationMode"
 
   SetActiveConversationRequest:
    type: object

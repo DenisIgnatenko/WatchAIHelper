@@ -33,3 +33,30 @@ Sample answer (as shown on the Watch):
 6 — A, Meng: он слышал одну шутку много раз.
 7 — B, Hanna: ей нравится, что после праздника коллеги ведут себя как обычно.
 ```
+
+## Study materials
+
+Date: 2026-09-28. Source: the 33 public PDFs on danskogproever.dk, "Danskuddannelse 3 - materialer til modultest"
+(modules 1-4: information sheets, examples, mindmaps). Extracted text: ~10k words, ~20k tokens.
+
+Options considered (owner asked for A + B):
+- A: an exam guide written from the materials (`backend/src/main/resources/prompts/danish_exam.md`, focused on Modul 3.3).
+- B: the full materials. File Search (vector store) vs. the whole text in the instructions.
+
+Measurement (gpt-6-sol, reasoning low, text question about DU3 writing):
+
+| Instructions | Latency | Input tokens | Cached |
+|---|---|---|---|
+| Watch rules only | 5.9 s | 271 | 0 |
+| + full materials, first call | 4.5 s | 20 561 | 0 |
+| + full materials, repeated | 5.8 s | 20 561 | 20 558 |
+
+Decision: **B = full text as a stable instruction prefix** (prompt caching), not File Search: no measurable latency,
+~$0.004 per cached request, the model sees everything (no retrieval misses), nothing is stored at OpenAI.
+Revisit File Search if a knowledge pack grows beyond ~100k tokens.
+
+The texts are third-party documents and are not stored in git: `tools/knowledge/fetch-danish-du3.sh` rebuilds
+`knowledge/danish-du3/corpus.md`, `deploy/deploy.sh` copies it to the server (read-only volume).
+Only conversations created as "Danish exam" use it (`Conversation.Mode` -> `ResponseMode.DANISH_EXAM`).
+
+Server check: "Сколько времени на чтение и сколько слов?" -> 3.3 answers (50 min, min. 90 words), 16.4 s cold, 7.2 s warm.

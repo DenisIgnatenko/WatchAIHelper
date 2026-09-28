@@ -43,8 +43,8 @@ public class ConversationService {
 
  /** Creates (idempotently by id) and makes it active on all devices. */
  @Transactional
- public Conversation create(UUID userId, UUID conversationId) {
-  conversations.insertIfAbsent(conversationId, userId, Conversation.DEFAULT_TITLE, clock.instant());
+ public Conversation create(UUID userId, UUID conversationId, Conversation.Mode mode) {
+  conversations.insertIfAbsent(conversationId, userId, Conversation.DEFAULT_TITLE, mode, clock.instant());
   Conversation conversation = get(userId, conversationId);
   conversations.setActive(userId, conversationId);
   return conversation;
@@ -61,7 +61,7 @@ public class ConversationService {
  public Conversation activeOrCreate(UUID userId) {
   Optional<Conversation> active = conversations.activeConversationId(userId)
    .flatMap(id -> conversations.find(userId, id));
-  return active.orElseGet(() -> create(userId, UUID.randomUUID()));
+  return active.orElseGet(() -> create(userId, UUID.randomUUID(), Conversation.Mode.GENERAL));
  }
 
  @Transactional(readOnly = true)

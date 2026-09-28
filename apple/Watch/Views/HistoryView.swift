@@ -7,10 +7,13 @@ struct HistoryView: View {
 
  var body: some View {
   List {
-   Button {
-    Task { await store.createConversation() }
-   } label: {
-    Label("New conversation", systemImage: "plus")
+   // New conversation of each type; "Danish exam" adds the exam guide and study materials.
+   ForEach(ConversationMode.allCases, id: \.self) { mode in
+    Button {
+     Task { await store.createConversation(mode: mode) }
+    } label: {
+     Label("New: \(mode.displayName)", systemImage: "plus")
+    }
    }
 
    ForEach(store.conversations) { conversation in
@@ -18,7 +21,7 @@ struct HistoryView: View {
      Task { await store.selectConversation(conversation) }
     } label: {
      VStack(alignment: .leading) {
-      Text(conversation.title)
+      Label(conversation.title, systemImage: conversation.mode.symbolName)
       Text(conversation.updatedAt, style: .relative)
        .font(.footnote)
        .foregroundStyle(.secondary)

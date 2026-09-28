@@ -123,9 +123,9 @@ final class DraftStore {
   }
  }
 
- func newConversation() async {
+ func newConversation(mode: ConversationMode) async {
   do {
-   _ = try await service.createConversation()
+   _ = try await service.createConversation(mode: mode)
    await resetForConversationChange()
   } catch {
    errorText = Self.describe(error)

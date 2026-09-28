@@ -121,9 +121,9 @@ final class WatchStore {
   }
  }
 
- func createConversation() async {
+ func createConversation(mode: ConversationMode) async {
   do {
-   _ = try await service.createConversation()
+   _ = try await service.createConversation(mode: mode)
    activeRequest = nil
    await refresh()
    path = []

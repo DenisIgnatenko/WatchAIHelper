@@ -53,6 +53,8 @@ extension Components {
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/Conversation/title`.
             public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Conversation/mode`.
+            public var mode: Components.Schemas.ConversationMode
             /// - Remark: Generated from `#/components/schemas/Conversation/updatedAt`.
             public var updatedAt: Foundation.Date
             /// Creates a new `Conversation`.
@@ -60,21 +62,33 @@ extension Components {
             /// - Parameters:
             ///   - id:
             ///   - title:
+            ///   - mode:
             ///   - updatedAt:
             public init(
                 id: Swift.String,
                 title: Swift.String,
+                mode: Components.Schemas.ConversationMode,
                 updatedAt: Foundation.Date
             ) {
                 self.id = id
                 self.title = title
+                self.mode = mode
                 self.updatedAt = updatedAt
             }
             public enum CodingKeys: String, CodingKey {
                 case id
                 case title
+                case mode
                 case updatedAt
             }
+        }
+        /// What the conversation is for, chosen at creation. danishExam adds the DU3 exam guide and the official study materials to the AI's instructions.
+        ///
+        ///
+        /// - Remark: Generated from `#/components/schemas/ConversationMode`.
+        @frozen public enum ConversationMode: String, Codable, Hashable, Sendable, CaseIterable {
+            case general = "general"
+            case danishExam = "danishExam"
         }
         /// - Remark: Generated from `#/components/schemas/CreateConversationRequest`.
         public struct CreateConversationRequest: Codable, Hashable, Sendable {
@@ -82,15 +96,23 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/CreateConversationRequest/id`.
             public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CreateConversationRequest/mode`.
+            public var mode: Components.Schemas.ConversationMode?
             /// Creates a new `CreateConversationRequest`.
             ///
             /// - Parameters:
             ///   - id: Client-generated id; makes the call idempotent.
-            public init(id: Swift.String) {
+            ///   - mode:
+            public init(
+                id: Swift.String,
+                mode: Components.Schemas.ConversationMode? = nil
+            ) {
                 self.id = id
+                self.mode = mode
             }
             public enum CodingKeys: String, CodingKey {
                 case id
+                case mode
             }
         }
         /// - Remark: Generated from `#/components/schemas/SetActiveConversationRequest`.

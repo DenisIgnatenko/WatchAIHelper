@@ -2,10 +2,12 @@ package com.aicopilot.api;
 
 import com.aicopilot.api.generated.ConversationsApi;
 import com.aicopilot.api.generated.model.ConversationDto;
+import com.aicopilot.api.generated.model.ConversationModeDto;
 import com.aicopilot.api.generated.model.CreateConversationRequestDto;
 import com.aicopilot.api.generated.model.MessageDto;
 import com.aicopilot.api.generated.model.SetActiveConversationRequestDto;
 import com.aicopilot.auth.CurrentUser;
+import com.aicopilot.conversation.Conversation;
 import com.aicopilot.conversation.ConversationService;
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +35,8 @@ class ConversationsController implements ConversationsApi {
 
  @Override
  public ResponseEntity<ConversationDto> createConversation(CreateConversationRequestDto request) {
-  var created = conversations.create(currentUser.id(), request.getId());
+  var mode = request.getMode() == ConversationModeDto.DANISH_EXAM ? Conversation.Mode.DANISH_EXAM : Conversation.Mode.GENERAL;
+  var created = conversations.create(currentUser.id(), request.getId(), mode);
   return ResponseEntity.status(HttpStatus.CREATED).body(mapper.conversation(created));
  }
 

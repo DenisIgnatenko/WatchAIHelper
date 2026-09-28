@@ -20,8 +20,8 @@ public protocol CopilotService: Sendable {
  /// All conversations, most recently updated first.
  func conversations() async throws -> [Conversation]
 
- /// Creates an empty conversation and makes it active on all devices.
- func createConversation() async throws -> Conversation
+ /// Creates an empty conversation of the given type and makes it active on all devices.
+ func createConversation(mode: ConversationMode) async throws -> Conversation
 
  /// Makes a conversation active on all devices (spec 6).
  func setActiveConversation(id: UUID) async throws

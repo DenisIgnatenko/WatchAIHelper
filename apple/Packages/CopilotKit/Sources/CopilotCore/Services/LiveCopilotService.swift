@@ -51,9 +51,12 @@ public struct LiveCopilotService: CopilotService {
   }
  }
 
- public func createConversation() async throws -> Conversation {
+ public func createConversation(mode: ConversationMode) async throws -> Conversation {
   // Client-generated id: a retried call cannot create a second conversation.
-  let body = Components.Schemas.CreateConversationRequest(id: UUID().uuidString)
+  let body = Components.Schemas.CreateConversationRequest(
+   id: UUID().uuidString,
+   mode: mode == .danishExam ? .danishExam : .general
+  )
   switch try await call({ try await client.createConversation(body: .json(body)) }) {
   case .created(let created): return try DTOMapping.conversation(created.body.json)
   case .unauthorized: throw CopilotServiceError.unauthorized

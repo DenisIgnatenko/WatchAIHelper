@@ -41,6 +41,11 @@ echo "== 3/4 Upload and restart"
 scp -i "$KEY" -q "$ROOT/deploy/app.jar" "$ROOT/deploy/Dockerfile" "$ROOT/deploy/docker-compose.yml" \
  "$ROOT/deploy/Caddyfile" "ubuntu@$IP:$REMOTE/"
 rm -f "$ROOT/deploy/app.jar"
+# Knowledge packs (third-party texts, not in git): copy if they were built locally with tools/knowledge.
+"${SSH[@]}" "mkdir -p $REMOTE/knowledge"
+if [ -d "$ROOT/knowledge" ]; then
+ scp -i "$KEY" -q -r "$ROOT/knowledge/." "ubuntu@$IP:$REMOTE/knowledge/"
+fi
 "${SSH[@]}" "cd $REMOTE && docker compose up -d --build --remove-orphans && docker image prune -f >/dev/null"
 
 echo "== 4/4 Health check (first start also obtains the TLS certificate)"

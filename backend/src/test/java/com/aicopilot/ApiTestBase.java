@@ -27,6 +27,7 @@ import tools.jackson.databind.ObjectMapper;
  "copilot.client-api-token=" + ApiTestBase.TOKEN,
  "copilot.processing.poll-interval=PT0.05S",
  "copilot.storage.path=${java.io.tmpdir}/aicopilot-test-blobs",
+ "copilot.knowledge.path=src/test/resources/knowledge-test",
 })
 @AutoConfigureMockMvc
 @Import(TestInfrastructure.class)

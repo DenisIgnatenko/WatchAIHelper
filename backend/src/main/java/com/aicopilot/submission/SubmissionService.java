@@ -2,6 +2,7 @@ package com.aicopilot.submission;
 
 import com.aicopilot.ai.ResponseMode;
 import com.aicopilot.common.NotFoundException;
+import com.aicopilot.conversation.Conversation;
 import com.aicopilot.conversation.ConversationService;
 import com.aicopilot.draft.AttachmentsChangedEvent;
 import com.aicopilot.draft.Draft;
@@ -76,7 +77,7 @@ public class SubmissionService {
   drafts.freeze(draftId, normalizedText);
   UUID requestId = UUID.randomUUID();
   requests.insertWaiting(requestId, userId, draft.conversationId(), draftId, idempotencyKey,
-   ResponseMode.WATCH_CONCISE, clock.instant());
+   responseMode(conversations.get(userId, draft.conversationId()).mode()), clock.instant());
   log.info("Submitted draftId={} aiRequestId={} conversationId={}", draftId, requestId, draft.conversationId());
 
   // 6. Start at once if nothing is missing; otherwise the upload that completes the set will do it.
@@ -131,6 +132,14 @@ public class SubmissionService {
   requests.markQueued(request.id(), messageId, clock.instant());
   log.info("Queued aiRequestId={} images={}", request.id(), attachments.total());
   events.publishEvent(new RequestQueuedEvent(request.id()));
+ }
+
+ /** The conversation type decides how the AI answers (and which study materials it gets). */
+ private static ResponseMode responseMode(Conversation.Mode mode) {
+  return switch (mode) {
+   case GENERAL -> ResponseMode.WATCH_CONCISE;
+   case DANISH_EXAM -> ResponseMode.DANISH_EXAM;
+  };
  }
 
  private static String normalize(String text) {

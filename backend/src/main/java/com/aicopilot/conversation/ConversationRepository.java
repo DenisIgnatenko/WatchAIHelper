@@ -19,6 +19,7 @@ class ConversationRepository {
   rs.getObject("id", UUID.class),
   rs.getObject("user_id", UUID.class),
   rs.getString("title"),
+  Conversation.Mode.valueOf(rs.getString("mode")),
   instant(rs, "updated_at"));
 
  private final JdbcClient jdbc;
@@ -40,13 +41,13 @@ class ConversationRepository {
  }
 
  /** Idempotent by id: a repeated call with the same id is a no-op. */
- void insertIfAbsent(UUID id, UUID userId, String title, Instant now) {
+ void insertIfAbsent(UUID id, UUID userId, String title, Conversation.Mode mode, Instant now) {
   jdbc.sql("""
-    insert into conversations (id, user_id, title, created_at, updated_at)
-    values (:id, :userId, :title, :now, :now)
+    insert into conversations (id, user_id, title, mode, created_at, updated_at)
+    values (:id, :userId, :title, :mode, :now, :now)
     on conflict (id) do nothing
     """)
-   .param("id", id).param("userId", userId).param("title", title).param("now", ts(now))
+   .param("id", id).param("userId", userId).param("title", title).param("mode", mode.name()).param("now", ts(now))
    .update();
  }
 

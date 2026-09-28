@@ -86,7 +86,7 @@ public actor MockCopilotService: CopilotService {
  ///  (used to review the conversation screen layout in the simulator).
  public init(scenario: DraftScenario = .empty, timing: Timing = .demo, seedDemoConversation: Bool = false) {
   self.timing = timing
-  let conversation = Conversation(id: UUID(), title: "Danish exam", updatedAt: Date())
+  let conversation = Conversation(id: UUID(), title: "Danish exam", mode: .danishExam, updatedAt: Date())
   self.activeConversationId = conversation.id
   self.conversationsById[conversation.id] = conversation
   self.messagesByConversation[conversation.id] = seedDemoConversation ? Self.demoMessages(conversationId: conversation.id) : []
@@ -129,8 +129,8 @@ public actor MockCopilotService: CopilotService {
   conversationsById.values.sorted { $0.updatedAt > $1.updatedAt }
  }
 
- public func createConversation() async throws -> Conversation {
-  let conversation = Conversation(id: UUID(), title: "New conversation", updatedAt: Date())
+ public func createConversation(mode: ConversationMode) async throws -> Conversation {
+  let conversation = Conversation(id: UUID(), title: "New conversation", mode: mode, updatedAt: Date())
   conversationsById[conversation.id] = conversation
   messagesByConversation[conversation.id] = []
   activeConversationId = conversation.id

@@ -15,11 +15,37 @@ import Foundation
 public struct Conversation: Identifiable, Hashable, Sendable {
  public let id: UUID
  public var title: String
+ /// Chosen at creation; decides the AI's instructions and study materials on the backend.
+ public let mode: ConversationMode
  public var updatedAt: Date
 
- public init(id: UUID, title: String, updatedAt: Date) {
+ public init(id: UUID, title: String, mode: ConversationMode = .general, updatedAt: Date) {
   self.id = id
   self.title = title
+  self.mode = mode
   self.updatedAt = updatedAt
+ }
+}
+
+/// What a conversation is for.
+public enum ConversationMode: Hashable, Sendable, CaseIterable {
+ /// General assistant.
+ case general
+ /// Danish exam preparation (DU3): exam guide + official study materials are added on the backend.
+ case danishExam
+
+ public var displayName: String {
+  switch self {
+  case .general: "General"
+  case .danishExam: "Danish exam"
+  }
+ }
+
+ /// SF Symbol shown next to the conversation title.
+ public var symbolName: String {
+  switch self {
+  case .general: "bubble.left.and.bubble.right"
+  case .danishExam: "graduationcap"
+  }
  }
 }

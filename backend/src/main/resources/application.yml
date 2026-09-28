@@ -57,6 +57,9 @@ copilot:
  storage:
   # Image bytes (BlobStorage). In Docker: a volume mounted at /data/blobs.
   path: ${STORAGE_PATH:./data/blobs}
+ knowledge:
+  # Study-material packs (tools/knowledge). Local: repo-root knowledge/; Docker: /data/knowledge (read-only).
+  path: ${KNOWLEDGE_PATH:../knowledge}
 
 logging:
  level:

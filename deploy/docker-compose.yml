@@ -26,11 +26,14 @@ services:
    DB_URL: jdbc:postgresql://postgres:5432/copilot
    DB_USER: copilot
    STORAGE_PATH: /data/blobs
+   KNOWLEDGE_PATH: /data/knowledge
    # Structured JSON logs (spec 59); `docker compose logs backend` shows them.
    LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
   volumes:
    # Image bytes (BlobStorage). Survives container rebuilds; covered by instance snapshots.
    - blobs:/data/blobs
+   # Study materials built by tools/knowledge and copied by deploy.sh (read-only for the app).
+   - ./knowledge:/data/knowledge:ro
   depends_on:
    postgres:
     condition: service_healthy

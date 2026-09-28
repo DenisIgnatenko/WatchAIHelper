@@ -76,7 +76,7 @@ struct DraftView: View {
     }
     .padding()
    }
-   .navigationTitle(store.conversation?.title ?? "AI Copilot")
+   .navigationTitle(store.conversation.map { $0.mode == .danishExam ? "🎓 \($0.title)" : $0.title } ?? "AI Copilot")
    .navigationBarTitleDisplayMode(.inline)
    .toolbar {
     // Which conversation receives the photos and the answer - always visible and switchable.
@@ -104,19 +104,19 @@ private struct ConversationMenu: View {
 
  var body: some View {
   Menu {
-   Button("New conversation", systemImage: "plus") {
-    Task { await store.newConversation() }
+   Section("New conversation") {
+    ForEach(ConversationMode.allCases, id: \.self) { mode in
+     Button(mode.displayName, systemImage: mode.symbolName) {
+      Task { await store.newConversation(mode: mode) }
+     }
+    }
    }
    Section("Conversations") {
     ForEach(store.conversations) { conversation in
      Button {
       Task { await store.select(conversation) }
      } label: {
-      if conversation.id == store.conversation?.id {
-       Label(conversation.title, systemImage: "checkmark")
-      } else {
-       Text(conversation.title)
-      }
+      Label(conversation.title, systemImage: conversation.id == store.conversation?.id ? "checkmark" : conversation.mode.symbolName)
      }
     }
    }

@@ -34,12 +34,15 @@ public class ContextBuilder {
  private final ConversationService conversations;
  private final DraftService drafts;
  private final CopilotProperties properties;
+ private final KnowledgeLibrary knowledge;
  private final Map<ResponseMode, String> promptCache = new ConcurrentHashMap<>();
 
- ContextBuilder(ConversationService conversations, DraftService drafts, CopilotProperties properties) {
+ ContextBuilder(ConversationService conversations, DraftService drafts, CopilotProperties properties,
+  KnowledgeLibrary knowledge) {
   this.conversations = conversations;
   this.drafts = drafts;
   this.properties = properties;
+  this.knowledge = knowledge;
  }
 
  /**
@@ -88,13 +91,22 @@ public class ContextBuilder {
   };
  }
 
+ /**
+  * Instruction files of the mode, then its knowledge pack. The result is identical for every request of the
+  * mode, so it forms a stable prefix that OpenAI caches (prompt caching) - keep dynamic data out of it.
+  */
  private String instructions(ResponseMode mode) {
   return promptCache.computeIfAbsent(mode, m -> {
-   try {
-    return new ClassPathResource(m.promptResource()).getContentAsString(StandardCharsets.UTF_8);
-   } catch (IOException e) {
-    throw new UncheckedIOException("Missing prompt " + m.promptResource(), e);
+   StringBuilder text = new StringBuilder();
+   for (String resource : m.promptResources()) {
+    try {
+     text.append(new ClassPathResource(resource).getContentAsString(StandardCharsets.UTF_8)).append("\n");
+    } catch (IOException e) {
+     throw new UncheckedIOException("Missing prompt " + resource, e);
+    }
    }
+   m.knowledgePack().flatMap(knowledge::pack).ifPresent(pack -> text.append("\n").append(pack));
+   return text.toString();
   });
  }
 }
