@@ -775,6 +775,952 @@ public enum Operations {
             }
         }
     }
+    /// The editable draft of a conversation with its attachments (created lazily).
+    ///
+    /// - Remark: HTTP `GET /v1/conversations/{conversationId}/draft`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/draft/get(getCurrentDraft)`.
+    public enum GetCurrentDraft {
+        public static let id: Swift.String = "getCurrentDraft"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/conversations/{conversationId}/draft/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/conversations/{conversationId}/draft/GET/path/conversationId`.
+                public var conversationId: Components.Parameters.ConversationId
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - conversationId:
+                public init(conversationId: Components.Parameters.ConversationId) {
+                    self.conversationId = conversationId
+                }
+            }
+            public var path: Operations.GetCurrentDraft.Input.Path
+            /// - Remark: Generated from `#/paths/v1/conversations/{conversationId}/draft/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetCurrentDraft.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetCurrentDraft.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetCurrentDraft.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.GetCurrentDraft.Input.Path,
+                headers: Operations.GetCurrentDraft.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/conversations/{conversationId}/draft/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/conversations/{conversationId}/draft/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.DraftDetail)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.DraftDetail {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetCurrentDraft.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetCurrentDraft.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Current draft.
+            ///
+            /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/draft/get(getCurrentDraft)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetCurrentDraft.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetCurrentDraft.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Missing or invalid device token.
+            ///
+            /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/draft/get(getCurrentDraft)/responses/401`.
+            ///
+            /// HTTP response code: `401 unauthorized`.
+            case unauthorized(Components.Responses.Unauthorized)
+            /// The associated value of the enum case if `self` is `.unauthorized`.
+            ///
+            /// - Throws: An error if `self` is not `.unauthorized`.
+            /// - SeeAlso: `.unauthorized`.
+            public var unauthorized: Components.Responses.Unauthorized {
+                get throws {
+                    switch self {
+                    case let .unauthorized(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unauthorized",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Not found (or belongs to another user).
+            ///
+            /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/draft/get(getCurrentDraft)/responses/404`.
+            ///
+            /// HTTP response code: `404 notFound`.
+            case notFound(Components.Responses.NotFound)
+            /// The associated value of the enum case if `self` is `.notFound`.
+            ///
+            /// - Throws: An error if `self` is not `.notFound`.
+            /// - SeeAlso: `.notFound`.
+            public var notFound: Components.Responses.NotFound {
+                get throws {
+                    switch self {
+                    case let .notFound(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "notFound",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case applicationProblemJson
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                case "application/problem+json":
+                    self = .applicationProblemJson
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                case .applicationProblemJson:
+                    return "application/problem+json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json,
+                    .applicationProblemJson
+                ]
+            }
+        }
+    }
+    /// Register an image in a draft before its bytes are uploaded.
+    ///
+    /// Step 1 of 2. The backend learns about the image before its bytes arrive, so a Send can wait for it and the Watch can show "Uploading 2/3". Idempotent by the client-generated attachment id. Position (order in the message) is assigned by the backend in registration order. Registering never starts AI inference.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /v1/drafts/{draftId}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)`.
+    public enum RegisterAttachment {
+        public static let id: Swift.String = "registerAttachment"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/path/draftId`.
+                public var draftId: Components.Parameters.DraftId
+                /// Generated by the client; makes registration idempotent.
+                ///
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/path/attachmentId`.
+                public var attachmentId: Components.Parameters.AttachmentId
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - draftId:
+                ///   - attachmentId: Generated by the client; makes registration idempotent.
+                public init(
+                    draftId: Components.Parameters.DraftId,
+                    attachmentId: Components.Parameters.AttachmentId
+                ) {
+                    self.draftId = draftId
+                    self.attachmentId = attachmentId
+                }
+            }
+            public var path: Operations.RegisterAttachment.Input.Path
+            /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RegisterAttachment.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RegisterAttachment.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RegisterAttachment.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.RegisterAttachmentRequest)
+            }
+            public var body: Operations.RegisterAttachment.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.RegisterAttachment.Input.Path,
+                headers: Operations.RegisterAttachment.Input.Headers = .init(),
+                body: Operations.RegisterAttachment.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Attachment)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Attachment {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RegisterAttachment.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RegisterAttachment.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Registered (or already registered with this id).
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.RegisterAttachment.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.RegisterAttachment.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Missing or invalid device token.
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)/responses/401`.
+            ///
+            /// HTTP response code: `401 unauthorized`.
+            case unauthorized(Components.Responses.Unauthorized)
+            /// The associated value of the enum case if `self` is `.unauthorized`.
+            ///
+            /// - Throws: An error if `self` is not `.unauthorized`.
+            /// - SeeAlso: `.unauthorized`.
+            public var unauthorized: Components.Responses.Unauthorized {
+                get throws {
+                    switch self {
+                    case let .unauthorized(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unauthorized",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Not found (or belongs to another user).
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)/responses/404`.
+            ///
+            /// HTTP response code: `404 notFound`.
+            case notFound(Components.Responses.NotFound)
+            /// The associated value of the enum case if `self` is `.notFound`.
+            ///
+            /// - Throws: An error if `self` is not `.notFound`.
+            /// - SeeAlso: `.notFound`.
+            public var notFound: Components.Responses.NotFound {
+                get throws {
+                    switch self {
+                    case let .notFound(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "notFound",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Conflict: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/responses/409/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/PUT/responses/409/content/application\/problem+json`.
+                    case applicationProblemJson(Components.Schemas.Problem)
+                    /// The associated value of the enum case if `self` is `.applicationProblemJson`.
+                    ///
+                    /// - Throws: An error if `self` is not `.applicationProblemJson`.
+                    /// - SeeAlso: `.applicationProblemJson`.
+                    public var applicationProblemJson: Components.Schemas.Problem {
+                        get throws {
+                            switch self {
+                            case let .applicationProblemJson(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RegisterAttachment.Output.Conflict.Body
+                /// Creates a new `Conflict`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RegisterAttachment.Output.Conflict.Body) {
+                    self.body = body
+                }
+            }
+            /// The draft is no longer editable (already sent).
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)/responses/409`.
+            ///
+            /// HTTP response code: `409 conflict`.
+            case conflict(Operations.RegisterAttachment.Output.Conflict)
+            /// The associated value of the enum case if `self` is `.conflict`.
+            ///
+            /// - Throws: An error if `self` is not `.conflict`.
+            /// - SeeAlso: `.conflict`.
+            public var conflict: Operations.RegisterAttachment.Output.Conflict {
+                get throws {
+                    switch self {
+                    case let .conflict(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "conflict",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case applicationProblemJson
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                case "application/problem+json":
+                    self = .applicationProblemJson
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                case .applicationProblemJson:
+                    return "application/problem+json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json,
+                    .applicationProblemJson
+                ]
+            }
+        }
+    }
+    /// Remove an image from an editable draft.
+    ///
+    /// - Remark: HTTP `DELETE /v1/drafts/{draftId}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)`.
+    public enum RemoveAttachment {
+        public static let id: Swift.String = "removeAttachment"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/DELETE/path/draftId`.
+                public var draftId: Components.Parameters.DraftId
+                /// Generated by the client; makes registration idempotent.
+                ///
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/DELETE/path/attachmentId`.
+                public var attachmentId: Components.Parameters.AttachmentId
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - draftId:
+                ///   - attachmentId: Generated by the client; makes registration idempotent.
+                public init(
+                    draftId: Components.Parameters.DraftId,
+                    attachmentId: Components.Parameters.AttachmentId
+                ) {
+                    self.draftId = draftId
+                    self.attachmentId = attachmentId
+                }
+            }
+            public var path: Operations.RemoveAttachment.Input.Path
+            /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/DELETE/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveAttachment.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RemoveAttachment.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RemoveAttachment.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.RemoveAttachment.Input.Path,
+                headers: Operations.RemoveAttachment.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            /// Removed (or did not exist).
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveAttachment.Output.NoContent)
+            /// Removed (or did not exist).
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveAttachment.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Missing or invalid device token.
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)/responses/401`.
+            ///
+            /// HTTP response code: `401 unauthorized`.
+            case unauthorized(Components.Responses.Unauthorized)
+            /// The associated value of the enum case if `self` is `.unauthorized`.
+            ///
+            /// - Throws: An error if `self` is not `.unauthorized`.
+            /// - SeeAlso: `.unauthorized`.
+            public var unauthorized: Components.Responses.Unauthorized {
+                get throws {
+                    switch self {
+                    case let .unauthorized(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unauthorized",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Not found (or belongs to another user).
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)/responses/404`.
+            ///
+            /// HTTP response code: `404 notFound`.
+            case notFound(Components.Responses.NotFound)
+            /// The associated value of the enum case if `self` is `.notFound`.
+            ///
+            /// - Throws: An error if `self` is not `.notFound`.
+            /// - SeeAlso: `.notFound`.
+            public var notFound: Components.Responses.NotFound {
+                get throws {
+                    switch self {
+                    case let .notFound(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "notFound",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Conflict: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/DELETE/responses/409/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/drafts/{draftId}/attachments/{attachmentId}/DELETE/responses/409/content/application\/problem+json`.
+                    case applicationProblemJson(Components.Schemas.Problem)
+                    /// The associated value of the enum case if `self` is `.applicationProblemJson`.
+                    ///
+                    /// - Throws: An error if `self` is not `.applicationProblemJson`.
+                    /// - SeeAlso: `.applicationProblemJson`.
+                    public var applicationProblemJson: Components.Schemas.Problem {
+                        get throws {
+                            switch self {
+                            case let .applicationProblemJson(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RemoveAttachment.Output.Conflict.Body
+                /// Creates a new `Conflict`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RemoveAttachment.Output.Conflict.Body) {
+                    self.body = body
+                }
+            }
+            /// The draft is no longer editable.
+            ///
+            /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)/responses/409`.
+            ///
+            /// HTTP response code: `409 conflict`.
+            case conflict(Operations.RemoveAttachment.Output.Conflict)
+            /// The associated value of the enum case if `self` is `.conflict`.
+            ///
+            /// - Throws: An error if `self` is not `.conflict`.
+            /// - SeeAlso: `.conflict`.
+            public var conflict: Operations.RemoveAttachment.Output.Conflict {
+                get throws {
+                    switch self {
+                    case let .conflict(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "conflict",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case applicationProblemJson
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/problem+json":
+                    self = .applicationProblemJson
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .applicationProblemJson:
+                    return "application/problem+json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .applicationProblemJson
+                ]
+            }
+        }
+    }
+    /// Upload the bytes of a registered image (raw request body).
+    ///
+    /// Step 2 of 2. Raw body (not multipart), so iOS background URLSession can upload it from a file. Idempotent: repeating the upload of the same bytes is harmless. Allowed after Send while the draft waits for its images. Uploading never starts AI inference by itself; it may only complete a Send that is already waiting for this image.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /v1/attachments/{attachmentId}/content`.
+    /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)`.
+    public enum UploadAttachmentContent {
+        public static let id: Swift.String = "uploadAttachmentContent"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// Generated by the client; makes registration idempotent.
+                ///
+                /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/path/attachmentId`.
+                public var attachmentId: Components.Parameters.AttachmentId
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - attachmentId: Generated by the client; makes registration idempotent.
+                public init(attachmentId: Components.Parameters.AttachmentId) {
+                    self.attachmentId = attachmentId
+                }
+            }
+            public var path: Operations.UploadAttachmentContent.Input.Path
+            /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UploadAttachmentContent.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UploadAttachmentContent.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UploadAttachmentContent.Input.Headers
+            /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/requestBody/content/application\/octet-stream`.
+                case binary(OpenAPIRuntime.HTTPBody)
+            }
+            public var body: Operations.UploadAttachmentContent.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UploadAttachmentContent.Input.Path,
+                headers: Operations.UploadAttachmentContent.Input.Headers = .init(),
+                body: Operations.UploadAttachmentContent.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.Attachment)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.Attachment {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UploadAttachmentContent.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UploadAttachmentContent.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Stored and verified.
+            ///
+            /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UploadAttachmentContent.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UploadAttachmentContent.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Missing or invalid device token.
+            ///
+            /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)/responses/401`.
+            ///
+            /// HTTP response code: `401 unauthorized`.
+            case unauthorized(Components.Responses.Unauthorized)
+            /// The associated value of the enum case if `self` is `.unauthorized`.
+            ///
+            /// - Throws: An error if `self` is not `.unauthorized`.
+            /// - SeeAlso: `.unauthorized`.
+            public var unauthorized: Components.Responses.Unauthorized {
+                get throws {
+                    switch self {
+                    case let .unauthorized(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unauthorized",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Not found (or belongs to another user).
+            ///
+            /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)/responses/404`.
+            ///
+            /// HTTP response code: `404 notFound`.
+            case notFound(Components.Responses.NotFound)
+            /// The associated value of the enum case if `self` is `.notFound`.
+            ///
+            /// - Throws: An error if `self` is not `.notFound`.
+            /// - SeeAlso: `.notFound`.
+            public var notFound: Components.Responses.NotFound {
+                get throws {
+                    switch self {
+                    case let .notFound(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "notFound",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct Conflict: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/responses/409/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/responses/409/content/application\/problem+json`.
+                    case applicationProblemJson(Components.Schemas.Problem)
+                    /// The associated value of the enum case if `self` is `.applicationProblemJson`.
+                    ///
+                    /// - Throws: An error if `self` is not `.applicationProblemJson`.
+                    /// - SeeAlso: `.applicationProblemJson`.
+                    public var applicationProblemJson: Components.Schemas.Problem {
+                        get throws {
+                            switch self {
+                            case let .applicationProblemJson(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UploadAttachmentContent.Output.Conflict.Body
+                /// Creates a new `Conflict`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UploadAttachmentContent.Output.Conflict.Body) {
+                    self.body = body
+                }
+            }
+            /// The image can no longer be uploaded (e.g. removed or the Send was cancelled).
+            ///
+            /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)/responses/409`.
+            ///
+            /// HTTP response code: `409 conflict`.
+            case conflict(Operations.UploadAttachmentContent.Output.Conflict)
+            /// The associated value of the enum case if `self` is `.conflict`.
+            ///
+            /// - Throws: An error if `self` is not `.conflict`.
+            /// - SeeAlso: `.conflict`.
+            public var conflict: Operations.UploadAttachmentContent.Output.Conflict {
+                get throws {
+                    switch self {
+                    case let .conflict(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "conflict",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/v1/attachments/{attachmentId}/content/PUT/responses/422/content/application\/problem+json`.
+                    case applicationProblemJson(Components.Schemas.Problem)
+                    /// The associated value of the enum case if `self` is `.applicationProblemJson`.
+                    ///
+                    /// - Throws: An error if `self` is not `.applicationProblemJson`.
+                    /// - SeeAlso: `.applicationProblemJson`.
+                    public var applicationProblemJson: Components.Schemas.Problem {
+                        get throws {
+                            switch self {
+                            case let .applicationProblemJson(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UploadAttachmentContent.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UploadAttachmentContent.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Size or SHA-256 does not match the registration.
+            ///
+            /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.UploadAttachmentContent.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.UploadAttachmentContent.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case applicationProblemJson
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                case "application/problem+json":
+                    self = .applicationProblemJson
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                case .applicationProblemJson:
+                    return "application/problem+json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json,
+                    .applicationProblemJson
+                ]
+            }
+        }
+    }
     /// Explicit Send - the only operation that starts AI inference.
     ///
     /// Freezes the draft and creates an AI request. Idempotent by `Idempotency-Key`: repeating the call with the same key returns the same request. A second submit of the same draft with a different key returns 409 (e.g. Watch and iPhone pressed Send at the same time).

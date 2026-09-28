@@ -41,6 +41,32 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /v1/conversations/{conversationId}/messages`.
     /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/messages/get(listMessages)`.
     func listMessages(_ input: Operations.ListMessages.Input) async throws -> Operations.ListMessages.Output
+    /// The editable draft of a conversation with its attachments (created lazily).
+    ///
+    /// - Remark: HTTP `GET /v1/conversations/{conversationId}/draft`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/draft/get(getCurrentDraft)`.
+    func getCurrentDraft(_ input: Operations.GetCurrentDraft.Input) async throws -> Operations.GetCurrentDraft.Output
+    /// Register an image in a draft before its bytes are uploaded.
+    ///
+    /// Step 1 of 2. The backend learns about the image before its bytes arrive, so a Send can wait for it and the Watch can show "Uploading 2/3". Idempotent by the client-generated attachment id. Position (order in the message) is assigned by the backend in registration order. Registering never starts AI inference.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /v1/drafts/{draftId}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)`.
+    func registerAttachment(_ input: Operations.RegisterAttachment.Input) async throws -> Operations.RegisterAttachment.Output
+    /// Remove an image from an editable draft.
+    ///
+    /// - Remark: HTTP `DELETE /v1/drafts/{draftId}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)`.
+    func removeAttachment(_ input: Operations.RemoveAttachment.Input) async throws -> Operations.RemoveAttachment.Output
+    /// Upload the bytes of a registered image (raw request body).
+    ///
+    /// Step 2 of 2. Raw body (not multipart), so iOS background URLSession can upload it from a file. Idempotent: repeating the upload of the same bytes is harmless. Allowed after Send while the draft waits for its images. Uploading never starts AI inference by itself; it may only complete a Send that is already waiting for this image.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /v1/attachments/{attachmentId}/content`.
+    /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)`.
+    func uploadAttachmentContent(_ input: Operations.UploadAttachmentContent.Input) async throws -> Operations.UploadAttachmentContent.Output
     /// Explicit Send - the only operation that starts AI inference.
     ///
     /// Freezes the draft and creates an AI request. Idempotent by `Idempotency-Key`: repeating the call with the same key returns the same request. A second submit of the same draft with a different key returns 409 (e.g. Watch and iPhone pressed Send at the same time).
@@ -114,6 +140,68 @@ extension APIProtocol {
         try await listMessages(Operations.ListMessages.Input(
             path: path,
             headers: headers
+        ))
+    }
+    /// The editable draft of a conversation with its attachments (created lazily).
+    ///
+    /// - Remark: HTTP `GET /v1/conversations/{conversationId}/draft`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/draft/get(getCurrentDraft)`.
+    public func getCurrentDraft(
+        path: Operations.GetCurrentDraft.Input.Path,
+        headers: Operations.GetCurrentDraft.Input.Headers = .init()
+    ) async throws -> Operations.GetCurrentDraft.Output {
+        try await getCurrentDraft(Operations.GetCurrentDraft.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Register an image in a draft before its bytes are uploaded.
+    ///
+    /// Step 1 of 2. The backend learns about the image before its bytes arrive, so a Send can wait for it and the Watch can show "Uploading 2/3". Idempotent by the client-generated attachment id. Position (order in the message) is assigned by the backend in registration order. Registering never starts AI inference.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /v1/drafts/{draftId}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/put(registerAttachment)`.
+    public func registerAttachment(
+        path: Operations.RegisterAttachment.Input.Path,
+        headers: Operations.RegisterAttachment.Input.Headers = .init(),
+        body: Operations.RegisterAttachment.Input.Body
+    ) async throws -> Operations.RegisterAttachment.Output {
+        try await registerAttachment(Operations.RegisterAttachment.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Remove an image from an editable draft.
+    ///
+    /// - Remark: HTTP `DELETE /v1/drafts/{draftId}/attachments/{attachmentId}`.
+    /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/attachments/{attachmentId}/delete(removeAttachment)`.
+    public func removeAttachment(
+        path: Operations.RemoveAttachment.Input.Path,
+        headers: Operations.RemoveAttachment.Input.Headers = .init()
+    ) async throws -> Operations.RemoveAttachment.Output {
+        try await removeAttachment(Operations.RemoveAttachment.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Upload the bytes of a registered image (raw request body).
+    ///
+    /// Step 2 of 2. Raw body (not multipart), so iOS background URLSession can upload it from a file. Idempotent: repeating the upload of the same bytes is harmless. Allowed after Send while the draft waits for its images. Uploading never starts AI inference by itself; it may only complete a Send that is already waiting for this image.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /v1/attachments/{attachmentId}/content`.
+    /// - Remark: Generated from `#/paths//v1/attachments/{attachmentId}/content/put(uploadAttachmentContent)`.
+    public func uploadAttachmentContent(
+        path: Operations.UploadAttachmentContent.Input.Path,
+        headers: Operations.UploadAttachmentContent.Input.Headers = .init(),
+        body: Operations.UploadAttachmentContent.Input.Body
+    ) async throws -> Operations.UploadAttachmentContent.Output {
+        try await uploadAttachmentContent(Operations.UploadAttachmentContent.Input(
+            path: path,
+            headers: headers,
+            body: body
         ))
     }
     /// Explicit Send - the only operation that starts AI inference.

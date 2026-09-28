@@ -232,6 +232,181 @@ extension Components {
                 case failedAttachments
             }
         }
+        /// - Remark: Generated from `#/components/schemas/DraftDetail`.
+        public struct DraftDetail: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DraftDetail/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DraftDetail/conversationId`.
+            public var conversationId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/DraftDetail/text`.
+            public var text: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/DraftDetail/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case open = "open"
+                case frozen = "frozen"
+                case consumed = "consumed"
+            }
+            /// - Remark: Generated from `#/components/schemas/DraftDetail/state`.
+            public var state: Components.Schemas.DraftDetail.StatePayload
+            /// In message order.
+            ///
+            /// - Remark: Generated from `#/components/schemas/DraftDetail/attachments`.
+            public var attachments: [Components.Schemas.Attachment]
+            /// Creates a new `DraftDetail`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - conversationId:
+            ///   - text:
+            ///   - state:
+            ///   - attachments: In message order.
+            public init(
+                id: Swift.String,
+                conversationId: Swift.String,
+                text: Swift.String? = nil,
+                state: Components.Schemas.DraftDetail.StatePayload,
+                attachments: [Components.Schemas.Attachment]
+            ) {
+                self.id = id
+                self.conversationId = conversationId
+                self.text = text
+                self.state = state
+                self.attachments = attachments
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case conversationId
+                case text
+                case state
+                case attachments
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Attachment`.
+        public struct Attachment: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Attachment/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Attachment/draftId`.
+            public var draftId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Attachment/position`.
+            public var position: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Attachment/source`.
+            public var source: Components.Schemas.AttachmentSource
+            /// - Remark: Generated from `#/components/schemas/Attachment/state`.
+            @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case pending = "pending"
+                case uploaded = "uploaded"
+                case failed = "failed"
+            }
+            /// - Remark: Generated from `#/components/schemas/Attachment/state`.
+            public var state: Components.Schemas.Attachment.StatePayload
+            /// - Remark: Generated from `#/components/schemas/Attachment/mimeType`.
+            public var mimeType: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Attachment/byteSize`.
+            public var byteSize: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Attachment/failureReason`.
+            public var failureReason: Swift.String?
+            /// Creates a new `Attachment`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - draftId:
+            ///   - position:
+            ///   - source:
+            ///   - state:
+            ///   - mimeType:
+            ///   - byteSize:
+            ///   - failureReason:
+            public init(
+                id: Swift.String,
+                draftId: Swift.String,
+                position: Swift.Int,
+                source: Components.Schemas.AttachmentSource,
+                state: Components.Schemas.Attachment.StatePayload,
+                mimeType: Swift.String,
+                byteSize: Swift.Int64,
+                failureReason: Swift.String? = nil
+            ) {
+                self.id = id
+                self.draftId = draftId
+                self.position = position
+                self.source = source
+                self.state = state
+                self.mimeType = mimeType
+                self.byteSize = byteSize
+                self.failureReason = failureReason
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case draftId
+                case position
+                case source
+                case state
+                case mimeType
+                case byteSize
+                case failureReason
+            }
+        }
+        /// Where the image came from. Only for diagnostics/UI; processing ignores it (spec 22).
+        ///
+        /// - Remark: Generated from `#/components/schemas/AttachmentSource`.
+        @frozen public enum AttachmentSource: String, Codable, Hashable, Sendable, CaseIterable {
+            case camera = "camera"
+            case photoLibrary = "photoLibrary"
+        }
+        /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest`.
+        public struct RegisterAttachmentRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/mimeType`.
+            @frozen public enum MimeTypePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case imageJpeg = "image/jpeg"
+                case imagePng = "image/png"
+            }
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/mimeType`.
+            public var mimeType: Components.Schemas.RegisterAttachmentRequest.MimeTypePayload
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/byteSize`.
+            public var byteSize: Swift.Int64
+            /// Lower-case hex SHA-256 of the bytes that will be uploaded.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/sha256`.
+            public var sha256: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/source`.
+            public var source: Components.Schemas.AttachmentSource
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/width`.
+            public var width: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/RegisterAttachmentRequest/height`.
+            public var height: Swift.Int?
+            /// Creates a new `RegisterAttachmentRequest`.
+            ///
+            /// - Parameters:
+            ///   - mimeType:
+            ///   - byteSize:
+            ///   - sha256: Lower-case hex SHA-256 of the bytes that will be uploaded.
+            ///   - source:
+            ///   - width:
+            ///   - height:
+            public init(
+                mimeType: Components.Schemas.RegisterAttachmentRequest.MimeTypePayload,
+                byteSize: Swift.Int64,
+                sha256: Swift.String,
+                source: Components.Schemas.AttachmentSource,
+                width: Swift.Int? = nil,
+                height: Swift.Int? = nil
+            ) {
+                self.mimeType = mimeType
+                self.byteSize = byteSize
+                self.sha256 = sha256
+                self.source = source
+                self.width = width
+                self.height = height
+            }
+            public enum CodingKeys: String, CodingKey {
+                case mimeType
+                case byteSize
+                case sha256
+                case source
+                case width
+                case height
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/SubmitDraftRequest`.
         public struct SubmitDraftRequest: Codable, Hashable, Sendable {
             /// Optional; with attachments it becomes the text of the same message.

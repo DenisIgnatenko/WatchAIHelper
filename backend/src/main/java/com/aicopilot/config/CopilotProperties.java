@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * The model name and every OpenAI knob live here only (spec 33: no model names scattered in code).
  */
 @ConfigurationProperties("copilot")
-public record CopilotProperties(String clientApiToken, OpenAi openai, Processing processing) {
+public record CopilotProperties(String clientApiToken, OpenAi openai, Processing processing, Attachments attachments) {
 
  public record OpenAi(
   String apiKey,
@@ -26,7 +26,12 @@ public record CopilotProperties(String clientApiToken, OpenAi openai, Processing
   Duration lease,
   int maxAttempts,
   int maxConcurrency,
-  int contextMessages
+  int contextMessages,
+  int contextImages
  ) {
+ }
+
+ /** @param uploadTimeout a registered image whose bytes do not arrive within this time becomes FAILED */
+ public record Attachments(Duration uploadTimeout) {
  }
 }

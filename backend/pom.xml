@@ -18,7 +18,7 @@
 
  <groupId>com.aicopilot</groupId>
  <artifactId>aicopilot-backend</artifactId>
- <version>0.2.0</version>
+ <version>0.3.0</version>
  <name>AI Copilot backend</name>
 
  <properties>
@@ -105,6 +105,20 @@
    <plugin>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-maven-plugin</artifactId>
+   </plugin>
+   <!--
+    Run the *IT integration tests in the normal `mvn test` / `mvn verify` (deploy.sh relies on it).
+    Surefire's default pattern (*Test) would silently skip them.
+   -->
+   <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <configuration>
+     <includes>
+      <include>**/*Test.java</include>
+      <include>**/*IT.java</include>
+     </includes>
+    </configuration>
    </plugin>
    <!--
     Generates Spring MVC interfaces and DTOs from api/openapi.yaml (the shared contract).

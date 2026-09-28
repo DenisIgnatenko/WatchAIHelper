@@ -25,8 +25,12 @@ services:
   environment:
    DB_URL: jdbc:postgresql://postgres:5432/copilot
    DB_USER: copilot
+   STORAGE_PATH: /data/blobs
    # Structured JSON logs (spec 59); `docker compose logs backend` shows them.
    LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+  volumes:
+   # Image bytes (BlobStorage). Survives container rebuilds; covered by instance snapshots.
+   - blobs:/data/blobs
   depends_on:
    postgres:
     condition: service_healthy
@@ -50,5 +54,6 @@ services:
 
 volumes:
  pgdata:
+ blobs:
  caddy_data:
  caddy_config:

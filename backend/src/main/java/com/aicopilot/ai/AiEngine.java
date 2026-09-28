@@ -21,10 +21,22 @@ public interface AiEngine {
  record AiContext(String instructions, List<Turn> turns) {
  }
 
- /** One message of the conversation as the model sees it. */
- record Turn(Role role, String text) {
+ /**
+  * One message of the conversation as the model sees it.
+  *
+  * @param images images of a user message, in their original order (spec 27); empty for answers
+  */
+ record Turn(Role role, String text, List<Image> images) {
+
+  public Turn(Role role, String text) {
+   this(role, text, List.of());
+  }
 
   public enum Role { USER, ASSISTANT }
+ }
+
+ /** Image bytes as stored (JPEG/PNG). */
+ record Image(String mimeType, byte[] bytes) {
  }
 
  /** A validated answer: plain text plus at most three follow-ups (spec 16, 51). */

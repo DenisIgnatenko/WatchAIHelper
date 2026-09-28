@@ -11,49 +11,16 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * End-to-end backend tests through the HTTP API: draft -> submit -> message -> AI -> answer.
- * Covers the spec 58 invariants that exist in Phase 2 (text-only).
+ * End-to-end backend tests through the HTTP API: draft -> submit -> message -> AI -> answer (text).
+ * Covers the spec 58 invariants for text questions. Images: {@link AttachmentFlowIT}.
  */
-@SpringBootTest(properties = {
- "copilot.client-api-token=" + SubmissionFlowIT.TOKEN,
- "copilot.processing.poll-interval=PT0.05S",
-})
-@AutoConfigureMockMvc
-@Import(TestInfrastructure.class)
-class SubmissionFlowIT {
-
- static final String TOKEN = "test-device-token";
-
- @Autowired
- MockMvc mvc;
- @Autowired
- ObjectMapper json;
- @Autowired
- JdbcClient jdbc;
- @Autowired
- FakeAiEngine ai;
-
- @BeforeEach
- void cleanState() {
-  // Users/devices stay (created once by the bootstrap); everything conversational is reset.
-  jdbc.sql("truncate ai_requests, messages, drafts, user_settings, conversations cascade").update();
-  ai.reset();
- }
+class SubmissionFlowIT extends ApiTestBase {
 
  @Test
  void rejectsRequestsWithoutValidToken() throws Exception {
@@ -179,50 +146,5 @@ class SubmissionFlowIT {
   assertThat(done.at("/failureReason").asString()).isNotBlank();
   assertThat(ai.calls).hasSize(1);
   assertThat(count("messages where role = 'ASSISTANT'")).isZero();
- }
-
- // --- helpers ---
-
- private MockHttpServletRequestBuilder authorized(MockHttpServletRequestBuilder request) {
-  return request.header("Authorization", "Bearer " + TOKEN);
- }
-
- private JsonNode home() throws Exception {
-  return body(mvc.perform(authorized(get("/v1/home"))).andReturn(), 200);
- }
-
- private JsonNode messages(String conversationId) throws Exception {
-  return body(mvc.perform(authorized(get("/v1/conversations/{id}/messages", conversationId))).andReturn(), 200);
- }
-
- private JsonNode submit(String draftId, String text, UUID key, int expectedStatus) throws Exception {
-  MvcResult result = mvc.perform(authorized(post("/v1/drafts/{id}/submit", draftId))
-    .header("Idempotency-Key", key.toString())
-    .contentType(MediaType.APPLICATION_JSON)
-    .content(json.writeValueAsString(java.util.Map.of("text", text))))
-   .andReturn();
-  return body(result, expectedStatus);
- }
-
- /** Uses the long-poll endpoint exactly like the Watch does. */
- private JsonNode awaitTerminal(String requestId) throws Exception {
-  for (int i = 0; i < 10; i++) {
-   JsonNode state = body(mvc.perform(authorized(get("/v1/requests/{id}", requestId).param("waitSeconds", "5")))
-    .andReturn(), 200);
-   String value = state.at("/state").asString();
-   if (value.equals("completed") || value.equals("failed") || value.equals("cancelled")) {
-    return state;
-   }
-  }
-  throw new AssertionError("Request did not finish: " + requestId);
- }
-
- private JsonNode body(MvcResult result, int expectedStatus) throws Exception {
-  assertThat(result.getResponse().getStatus()).as(result.getResponse().getContentAsString()).isEqualTo(expectedStatus);
-  return json.readTree(result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
- }
-
- private int count(String tableAndCondition) {
-  return jdbc.sql("select count(*) from " + tableAndCondition).query(Integer.class).single();
  }
 }

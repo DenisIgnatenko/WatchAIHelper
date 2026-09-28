@@ -15,9 +15,11 @@ import com.openai.models.Reasoning;
 import com.openai.models.ReasoningEffort;
 import com.openai.models.responses.EasyInputMessage;
 import com.openai.models.responses.ResponseCreateParams;
+import com.openai.models.responses.ResponseInputImage;
 import com.openai.models.responses.ResponseInputItem;
 import com.openai.models.responses.StructuredResponse;
 import com.openai.models.responses.StructuredResponseCreateParams;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -59,7 +61,7 @@ class OpenAiEngine implements AiEngine {
   StructuredResponseCreateParams<ReplyFormat> params = ResponseCreateParams.builder()
    .model(settings.model())
    .instructions(context.instructions())
-   .inputOfResponse(context.turns().stream().map(OpenAiEngine::toInputItem).toList())
+   .inputOfResponse(context.turns().stream().map(this::toInputItem).toList())
    .store(settings.store())
    .reasoning(Reasoning.builder().effort(ReasoningEffort.of(settings.reasoningEffort())).build())
    .text(ReplyFormat.class)
@@ -91,7 +93,19 @@ class OpenAiEngine implements AiEngine {
   }
  }
 
- private static ResponseInputItem toInputItem(Turn turn) {
+ private ResponseInputItem toInputItem(Turn turn) {
+  if (!turn.images().isEmpty()) {
+   // Images first, in their original order (spec 27), then the text: one logical user message.
+   var message = ResponseInputItem.Message.builder().role(ResponseInputItem.Message.Role.USER);
+   for (Image image : turn.images()) {
+    message.addContent(ResponseInputImage.builder()
+     .detail(ResponseInputImage.Detail.of(settings.imageDetail()))
+     .imageUrl("data:" + image.mimeType() + ";base64," + Base64.getEncoder().encodeToString(image.bytes()))
+     .build());
+   }
+   message.addInputTextContent(turn.text());
+   return ResponseInputItem.ofMessage(message.build());
+  }
   EasyInputMessage.Role role = switch (turn.role()) {
    case USER -> EasyInputMessage.Role.USER;
    case ASSISTANT -> EasyInputMessage.Role.ASSISTANT;

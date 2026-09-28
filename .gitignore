@@ -33,3 +33,6 @@ target/
 
 # Deploy artifact copied by deploy.sh
 deploy/app.jar
+
+# Local image storage of the backend (dev)
+backend/data/

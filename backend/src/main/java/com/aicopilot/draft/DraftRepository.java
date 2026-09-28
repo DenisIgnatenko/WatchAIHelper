@@ -26,6 +26,10 @@ class DraftRepository {
   this.jdbc = jdbc;
  }
 
+ Optional<Draft> find(UUID draftId) {
+  return jdbc.sql("select * from drafts where id = :id").param("id", draftId).query(MAPPER).optional();
+ }
+
  Optional<Draft> findOpen(UUID conversationId) {
   return jdbc.sql("select * from drafts where conversation_id = :id and state = 'OPEN'")
    .param("id", conversationId)

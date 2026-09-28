@@ -4,11 +4,11 @@ openapi: 3.0.3
 #  - Java server interfaces + DTOs (backend, openapi-generator-maven-plugin);
 #  - Swift client (apple, swift-openapi-generator) - Phase 2, client side.
 #
-# Scope of this version: Phase 2 (text-only). Attachments, draft text editing, cancel/retry and
+# Scope of this version: Phase 3 (text + images). Draft text editing, cancel/retry and
 # conversation deletion are added in the phases that need them (YAGNI).
 info:
  title: AI Copilot API
- version: 0.2.0
+ version: 0.3.0
  description: Private backend for the AI Copilot iPhone and Apple Watch apps.
 
 servers:
@@ -21,6 +21,7 @@ tags:
  - name: Home
  - name: Conversations
  - name: Submissions
+ - name: Drafts
 
 paths:
  /v1/home:
@@ -104,6 +105,108 @@ paths:
     "401": { $ref: "#/components/responses/Unauthorized" }
     "404": { $ref: "#/components/responses/NotFound" }
 
+ /v1/conversations/{conversationId}/draft:
+  get:
+   tags: [Drafts]
+   operationId: getCurrentDraft
+   summary: The editable draft of a conversation with its attachments (created lazily).
+   parameters:
+    - $ref: "#/components/parameters/ConversationId"
+   responses:
+    "200":
+     description: Current draft.
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/DraftDetail" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+
+ /v1/drafts/{draftId}/attachments/{attachmentId}:
+  put:
+   tags: [Drafts]
+   operationId: registerAttachment
+   summary: Register an image in a draft before its bytes are uploaded.
+   description: >
+    Step 1 of 2. The backend learns about the image before its bytes arrive, so a Send can wait for it
+    and the Watch can show "Uploading 2/3". Idempotent by the client-generated attachment id.
+    Position (order in the message) is assigned by the backend in registration order.
+    Registering never starts AI inference.
+   parameters:
+    - $ref: "#/components/parameters/DraftId"
+    - $ref: "#/components/parameters/AttachmentId"
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema: { $ref: "#/components/schemas/RegisterAttachmentRequest" }
+   responses:
+    "200":
+     description: Registered (or already registered with this id).
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/Attachment" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+    "409":
+     description: The draft is no longer editable (already sent).
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+  delete:
+   tags: [Drafts]
+   operationId: removeAttachment
+   summary: Remove an image from an editable draft.
+   parameters:
+    - $ref: "#/components/parameters/DraftId"
+    - $ref: "#/components/parameters/AttachmentId"
+   responses:
+    "204": { description: Removed (or did not exist). }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+    "409":
+     description: The draft is no longer editable.
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+
+ /v1/attachments/{attachmentId}/content:
+  put:
+   tags: [Drafts]
+   operationId: uploadAttachmentContent
+   summary: Upload the bytes of a registered image (raw request body).
+   description: >
+    Step 2 of 2. Raw body (not multipart), so iOS background URLSession can upload it from a file.
+    Idempotent: repeating the upload of the same bytes is harmless. Allowed after Send while the draft
+    waits for its images. Uploading never starts AI inference by itself; it may only complete a Send
+    that is already waiting for this image.
+   parameters:
+    - $ref: "#/components/parameters/AttachmentId"
+   requestBody:
+    required: true
+    content:
+     application/octet-stream:
+      schema:
+       type: string
+       format: binary
+   responses:
+    "200":
+     description: Stored and verified.
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/Attachment" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+    "409":
+     description: The image can no longer be uploaded (e.g. removed or the Send was cancelled).
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+    "422":
+     description: Size or SHA-256 does not match the registration.
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+
  /v1/drafts/{draftId}/submit:
   post:
    tags: [Submissions]
@@ -185,6 +288,17 @@ components:
    name: conversationId
    in: path
    required: true
+   schema: { type: string, format: uuid }
+  DraftId:
+   name: draftId
+   in: path
+   required: true
+   schema: { type: string, format: uuid }
+  AttachmentId:
+   name: attachmentId
+   in: path
+   required: true
+   description: Generated by the client; makes registration idempotent.
    schema: { type: string, format: uuid }
 
  responses:
@@ -268,6 +382,61 @@ components:
     totalAttachments: { type: integer, minimum: 0 }
     uploadedAttachments: { type: integer, minimum: 0 }
     failedAttachments: { type: integer, minimum: 0 }
+
+  DraftDetail:
+   type: object
+   required: [id, conversationId, state, attachments]
+   properties:
+    id: { type: string, format: uuid }
+    conversationId: { type: string, format: uuid }
+    text: { type: string, nullable: true }
+    state:
+     type: string
+     enum: [open, frozen, consumed]
+    attachments:
+     type: array
+     description: In message order.
+     items: { $ref: "#/components/schemas/Attachment" }
+
+  Attachment:
+   type: object
+   required: [id, draftId, position, source, state, mimeType, byteSize]
+   properties:
+    id: { type: string, format: uuid }
+    draftId: { type: string, format: uuid }
+    position: { type: integer, minimum: 1 }
+    source: { $ref: "#/components/schemas/AttachmentSource" }
+    state:
+     type: string
+     enum: [pending, uploaded, failed]
+    mimeType: { type: string }
+    byteSize: { type: integer, format: int64 }
+    failureReason: { type: string }
+
+  AttachmentSource:
+   type: string
+   description: Where the image came from. Only for diagnostics/UI; processing ignores it (spec 22).
+   enum: [camera, photoLibrary]
+
+  RegisterAttachmentRequest:
+   type: object
+   required: [mimeType, byteSize, sha256, source]
+   properties:
+    mimeType:
+     type: string
+     enum: [image/jpeg, image/png]
+    byteSize:
+     type: integer
+     format: int64
+     minimum: 1
+     maximum: 20000000
+    sha256:
+     type: string
+     pattern: "^[0-9a-f]{64}$"
+     description: Lower-case hex SHA-256 of the bytes that will be uploaded.
+    source: { $ref: "#/components/schemas/AttachmentSource" }
+    width: { type: integer, minimum: 1 }
+    height: { type: integer, minimum: 1 }
 
   SubmitDraftRequest:
    type: object

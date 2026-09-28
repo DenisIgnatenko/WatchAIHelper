@@ -9,7 +9,8 @@ import java.util.UUID;
  *
  * @param seq             position inside the conversation (1, 2, 3, ...)
  * @param text            null for image-only user messages
- * @param attachmentCount number of images of a user message (0 in Phase 2)
+ * @param draftId         the draft a user message was created from (its images); null for answers
+ * @param attachmentCount number of images of a user message
  */
 public record Message(
  UUID id,
@@ -17,6 +18,7 @@ public record Message(
  int seq,
  Role role,
  String text,
+ UUID draftId,
  int attachmentCount,
  List<SuggestedAction> suggestedActions,
  Instant createdAt

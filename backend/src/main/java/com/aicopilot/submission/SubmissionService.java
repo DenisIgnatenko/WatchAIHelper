@@ -3,6 +3,7 @@ package com.aicopilot.submission;
 import com.aicopilot.ai.ResponseMode;
 import com.aicopilot.common.NotFoundException;
 import com.aicopilot.conversation.ConversationService;
+import com.aicopilot.draft.AttachmentsChangedEvent;
 import com.aicopilot.draft.Draft;
 import com.aicopilot.draft.DraftService;
 import com.aicopilot.draft.DraftService.AttachmentCounts;
@@ -14,7 +15,9 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -65,8 +68,7 @@ public class SubmissionService {
 
   // 4. Validate content. Text is optional when there are attachments (spec 28).
   String normalizedText = normalize(text);
-  AttachmentCounts attachments = drafts.attachmentCounts(draftId);
-  if (normalizedText == null && attachments.total() == 0) {
+  if (normalizedText == null && drafts.attachmentCounts(draftId).total() == 0) {
    throw new EmptyDraft();
   }
 
@@ -77,9 +79,22 @@ public class SubmissionService {
    ResponseMode.WATCH_CONCISE, clock.instant());
   log.info("Submitted draftId={} aiRequestId={} conversationId={}", draftId, requestId, draft.conversationId());
 
-  // 6. Start at once if nothing is missing; otherwise the upload that completes the set will do it (Phase 3).
-  promoteIfComplete(requestId, draft, normalizedText, attachments);
+  // 6. Start at once if nothing is missing; otherwise the upload that completes the set will do it.
+  reevaluate(requests.find(requestId).orElseThrow(), drafts.get(draftId));
   return requests.find(requestId).orElseThrow();
+ }
+
+ /**
+  * A waiting Send reacts to image changes (upload finished, upload failed, image removed).
+  * Runs synchronously inside the transaction that changed the images.
+  */
+ @EventListener
+ @Transactional(propagation = Propagation.MANDATORY)
+ public void onAttachmentsChanged(AttachmentsChangedEvent event) {
+  requests.findByDraft(event.draftId())
+   .filter(r -> r.state() == AiRequest.State.WAITING_FOR_ATTACHMENTS || r.state() == AiRequest.State.BLOCKED)
+   .flatMap(r -> requests.lock(r.id()))
+   .ifPresent(r -> reevaluate(r, drafts.get(event.draftId())));
  }
 
  @Transactional(readOnly = true)
@@ -93,17 +108,29 @@ public class SubmissionService {
  }
 
  /**
-  * WAITING_FOR_ATTACHMENTS -> QUEUED, atomically with creating the user message and consuming the draft.
-  * Never proceeds with pending or failed attachments (Invariant 6).
+  * The request state machine around images (docs/architecture.md, section 9):
+  * <ul>
+  *  <li>any image FAILED -> BLOCKED (never continue without it, Invariant 6);</li>
+  *  <li>some still uploading -> WAITING_FOR_ATTACHMENTS;</li>
+  *  <li>all uploaded -> QUEUED, atomically with creating the user message and consuming the draft.</li>
+  * </ul>
   */
- private void promoteIfComplete(UUID requestId, Draft draft, String text, AttachmentCounts attachments) {
-  if (attachments.pending() > 0 || attachments.failed() > 0) {
+ private void reevaluate(AiRequest request, Draft draft) {
+  AttachmentCounts attachments = drafts.attachmentCounts(draft.id());
+  if (attachments.failed() > 0) {
+   requests.markBlocked(request.id(), clock.instant());
    return;
   }
-  UUID messageId = conversations.appendUserMessage(draft.userId(), draft.conversationId(), text, draft.id(), requestId);
+  if (attachments.pending() > 0) {
+   requests.markWaiting(request.id(), clock.instant());
+   return;
+  }
+  UUID messageId = conversations.appendUserMessage(draft.userId(), draft.conversationId(), draft.text(), draft.id(),
+   request.id());
   drafts.consume(draft.id());
-  requests.markQueued(requestId, messageId, clock.instant());
-  events.publishEvent(new RequestQueuedEvent(requestId));
+  requests.markQueued(request.id(), messageId, clock.instant());
+  log.info("Queued aiRequestId={} images={}", request.id(), attachments.total());
+  events.publishEvent(new RequestQueuedEvent(request.id()));
  }
 
  private static String normalize(String text) {

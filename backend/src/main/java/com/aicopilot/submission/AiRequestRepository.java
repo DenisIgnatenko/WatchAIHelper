@@ -78,9 +78,23 @@ public class AiRequestRepository {
  void markQueued(UUID id, UUID userMessageId, Instant now) {
   jdbc.sql("""
     update ai_requests set state = 'QUEUED', user_message_id = :messageId, updated_at = :now
-    where id = :id and state = 'WAITING_FOR_ATTACHMENTS'
+    where id = :id and state in ('WAITING_FOR_ATTACHMENTS', 'BLOCKED')
     """)
    .param("id", id).param("messageId", userMessageId).param("now", ts(now))
+   .update();
+ }
+
+ /** An image of the waiting draft failed: stop and wait for the user (Retry / Remove / Cancel). */
+ void markBlocked(UUID id, Instant now) {
+  jdbc.sql("update ai_requests set state = 'BLOCKED', updated_at = :now where id = :id and state = 'WAITING_FOR_ATTACHMENTS'")
+   .param("id", id).param("now", ts(now))
+   .update();
+ }
+
+ /** The failed image was re-uploaded or removed, others are still uploading: wait again. */
+ void markWaiting(UUID id, Instant now) {
+  jdbc.sql("update ai_requests set state = 'WAITING_FOR_ATTACHMENTS', updated_at = :now where id = :id and state = 'BLOCKED'")
+   .param("id", id).param("now", ts(now))
    .update();
  }
 

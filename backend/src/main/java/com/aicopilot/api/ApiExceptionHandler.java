@@ -1,6 +1,7 @@
 package com.aicopilot.api;
 
 import com.aicopilot.common.NotFoundException;
+import com.aicopilot.draft.DraftErrors;
 import com.aicopilot.submission.SubmissionErrors.DraftAlreadySubmitted;
 import com.aicopilot.submission.SubmissionErrors.EmptyDraft;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,21 @@ class ApiExceptionHandler {
  @ExceptionHandler(EmptyDraft.class)
  ProblemDetail emptyDraft(EmptyDraft e) {
   return problem(HttpStatus.UNPROCESSABLE_CONTENT, "empty_draft", e.getMessage());
+ }
+
+ @ExceptionHandler(DraftErrors.DraftNotEditable.class)
+ ProblemDetail notEditable(DraftErrors.DraftNotEditable e) {
+  return problem(HttpStatus.CONFLICT, "draft_not_editable", e.getMessage());
+ }
+
+ @ExceptionHandler(DraftErrors.AttachmentConflict.class)
+ ProblemDetail attachmentConflict(DraftErrors.AttachmentConflict e) {
+  return problem(HttpStatus.CONFLICT, "attachment_conflict", e.getMessage());
+ }
+
+ @ExceptionHandler(DraftErrors.ContentMismatch.class)
+ ProblemDetail contentMismatch(DraftErrors.ContentMismatch e) {
+  return problem(HttpStatus.UNPROCESSABLE_CONTENT, "content_mismatch", e.getMessage());
  }
 
  private static ProblemDetail problem(HttpStatus status, String code, String detail) {

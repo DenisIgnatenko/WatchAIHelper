@@ -1,6 +1,9 @@
 package com.aicopilot.api;
 
 import com.aicopilot.api.generated.model.AiRequestDto;
+import com.aicopilot.api.generated.model.AttachmentDto;
+import com.aicopilot.api.generated.model.AttachmentSourceDto;
+import com.aicopilot.api.generated.model.DraftDetailDto;
 import com.aicopilot.api.generated.model.ConversationDto;
 import com.aicopilot.api.generated.model.DraftSummaryDto;
 import com.aicopilot.api.generated.model.HomeSnapshotDto;
@@ -8,6 +11,9 @@ import com.aicopilot.api.generated.model.MessageDto;
 import com.aicopilot.api.generated.model.SuggestedActionDto;
 import com.aicopilot.conversation.Conversation;
 import com.aicopilot.conversation.Message;
+import com.aicopilot.draft.Attachment;
+import com.aicopilot.draft.AttachmentService.DraftDetail;
+import com.aicopilot.draft.Draft;
 import com.aicopilot.draft.DraftService;
 import com.aicopilot.draft.DraftService.AttachmentCounts;
 import com.aicopilot.home.HomeService.HomeSnapshot;
@@ -38,6 +44,28 @@ class ApiMapper {
   home.latestRequest().ifPresent(r -> dto.latestRequest(request(r)));
   home.lastAnswer().ifPresent(m -> dto.lastAnswer(message(m)));
   return dto;
+ }
+
+ DraftDetailDto draftDetail(DraftDetail detail) {
+  Draft d = detail.draft();
+  var state = switch (d.state()) {
+   case OPEN -> DraftDetailDto.StateEnum.OPEN;
+   case FROZEN -> DraftDetailDto.StateEnum.FROZEN;
+   case CONSUMED -> DraftDetailDto.StateEnum.CONSUMED;
+  };
+  return new DraftDetailDto(d.id(), d.conversationId(), state, detail.attachments().stream().map(this::attachment).toList())
+   .text(d.text());
+ }
+
+ AttachmentDto attachment(Attachment a) {
+  var state = switch (a.state()) {
+   case PENDING -> AttachmentDto.StateEnum.PENDING;
+   case UPLOADED -> AttachmentDto.StateEnum.UPLOADED;
+   case FAILED -> AttachmentDto.StateEnum.FAILED;
+  };
+  var source = a.source() == Attachment.Source.CAMERA ? AttachmentSourceDto.CAMERA : AttachmentSourceDto.PHOTO_LIBRARY;
+  return new AttachmentDto(a.id(), a.draftId(), a.position(), source, state, a.mimeType(), a.byteSize())
+   .failureReason(a.failureReason());
  }
 
  ConversationDto conversation(Conversation c) {

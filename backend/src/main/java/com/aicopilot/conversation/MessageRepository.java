@@ -22,6 +22,12 @@ class MessageRepository {
  private static final TypeReference<List<SuggestedAction>> ACTIONS = new TypeReference<>() {
  };
 
+ /** Every message query: columns plus the number of images of the message's draft. */
+ private static final String SELECT = """
+  select m.*, (select count(*) from attachments a where a.draft_id = m.draft_id) as attachment_count
+  from messages m
+  """;
+
  private final JdbcClient jdbc;
  private final ObjectMapper json;
  private final RowMapper<Message> mapper;
@@ -35,14 +41,14 @@ class MessageRepository {
    rs.getInt("seq"),
    Role.valueOf(rs.getString("role")),
    rs.getString("text"),
-   // Phase 3 replaces this with the number of attachments of the message's draft.
-   0,
+   rs.getObject("draft_id", UUID.class),
+   rs.getInt("attachment_count"),
    json.readValue(rs.getString("suggested_actions"), ACTIONS),
    instant(rs, "created_at"));
  }
 
  List<Message> listByConversation(UUID conversationId) {
-  return jdbc.sql("select * from messages where conversation_id = :id order by seq")
+  return jdbc.sql(SELECT + "where m.conversation_id = :id order by m.seq")
    .param("id", conversationId)
    .query(mapper).list();
  }
@@ -51,7 +57,8 @@ class MessageRepository {
  List<Message> recent(UUID conversationId, int maxSeq, int limit) {
   return jdbc.sql("""
     select * from (
-     select * from messages where conversation_id = :id and seq <= :maxSeq order by seq desc limit :limit
+     select m.*, (select count(*) from attachments a where a.draft_id = m.draft_id) as attachment_count
+     from messages m where m.conversation_id = :id and m.seq <= :maxSeq order by m.seq desc limit :limit
     ) recent order by seq
     """)
    .param("id", conversationId).param("maxSeq", maxSeq).param("limit", limit)
@@ -59,12 +66,13 @@ class MessageRepository {
  }
 
  Optional<Message> find(UUID id) {
-  return jdbc.sql("select * from messages where id = :id").param("id", id).query(mapper).optional();
+  return jdbc.sql(SELECT + "where m.id = :id").param("id", id).query(mapper).optional();
  }
 
  Optional<Message> lastAssistant(UUID conversationId) {
   return jdbc.sql("""
-    select * from messages where conversation_id = :id and role = 'ASSISTANT' order by seq desc limit 1
+    select m.*, 0 as attachment_count
+    from messages m where m.conversation_id = :id and m.role = 'ASSISTANT' order by m.seq desc limit 1
     """)
    .param("id", conversationId)
    .query(mapper).optional();

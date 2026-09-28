@@ -18,8 +18,11 @@ REMOTE=/opt/aicopilot
 export JAVA_HOME="${JAVA_HOME_25:-/opt/homebrew/opt/openjdk@25}"
 
 echo "== 1/4 Build and test"
-(cd "$ROOT/backend" && mvn -q verify)
-cp "$ROOT"/backend/target/aicopilot-backend-*.jar "$ROOT/deploy/app.jar"
+# clean: a stale jar of an older version must never be picked up.
+(cd "$ROOT/backend" && mvn -q clean verify)
+JARS=("$ROOT"/backend/target/aicopilot-backend-*.jar)
+[ "${#JARS[@]}" -eq 1 ] || { echo "Expected exactly one backend jar, found: ${JARS[*]}" >&2; exit 1; }
+cp "${JARS[0]}" "$ROOT/deploy/app.jar"
 
 echo "== 2/4 Server .env"
 if ! "${SSH[@]}" "test -f $REMOTE/.env"; then

@@ -50,6 +50,13 @@ copilot:
   max-concurrency: 4
   # How many recent messages form the conversation context.
   context-messages: 30
+  # At most this many images (newest first) are sent with the context; older ones become a text note.
+  context-images: 12
+ attachments:
+  upload-timeout: ${ATTACHMENT_UPLOAD_TIMEOUT_MINUTES:10}m
+ storage:
+  # Image bytes (BlobStorage). In Docker: a volume mounted at /data/blobs.
+  path: ${STORAGE_PATH:./data/blobs}
 
 logging:
  level:
