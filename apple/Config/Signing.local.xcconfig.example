@@ -1,0 +1,7 @@
+// Copy to Signing.local.xcconfig (git-ignored) and fill in your own values.
+
+// Your Apple team id (Xcode > Settings > Accounts, or the OU field of your "Apple Development" certificate).
+DEVELOPMENT_TEAM = XXXXXXXXXX
+
+// Reverse-DNS prefix unique to you. Free (Personal Team) accounts need globally unique bundle ids.
+BUNDLE_ID_PREFIX = com.yourname

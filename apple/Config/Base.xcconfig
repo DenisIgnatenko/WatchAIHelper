@@ -1,0 +1,9 @@
+// Committed build settings shared by all targets.
+// Personal values (Apple team, bundle id prefix) live in Signing.local.xcconfig, which is git-ignored.
+// Copy Signing.local.xcconfig.example to Signing.local.xcconfig and fill it in.
+
+// Placeholder, overridden by the local file.
+BUNDLE_ID_PREFIX = com.example
+
+// `#include?` = optional include: the build still works (unsigned, simulator only) without the file.
+#include? "Signing.local.xcconfig"
