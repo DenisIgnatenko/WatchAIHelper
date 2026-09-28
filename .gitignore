@@ -30,3 +30,6 @@ apple/*.xcodeproj/
 
 # Maven build output
 target/
+
+# Deploy artifact copied by deploy.sh
+deploy/app.jar

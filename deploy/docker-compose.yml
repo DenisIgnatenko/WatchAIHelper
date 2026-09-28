@@ -1,0 +1,54 @@
+# Production stack on the Lightsail VM (docs/architecture.md, section 19).
+# Lives in /opt/aicopilot on the server together with .env, Caddyfile, Dockerfile and app.jar.
+#  docker compose up -d --build
+services:
+ postgres:
+  image: postgres:17-alpine
+  restart: unless-stopped
+  environment:
+   POSTGRES_DB: copilot
+   POSTGRES_USER: copilot
+   POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+  volumes:
+   - pgdata:/var/lib/postgresql/data
+  healthcheck:
+   test: ["CMD-SHELL", "pg_isready -U copilot -d copilot"]
+   interval: 5s
+   timeout: 3s
+   retries: 10
+  # No ports: reachable only from the backend container.
+
+ backend:
+  build: .
+  restart: unless-stopped
+  env_file: .env
+  environment:
+   DB_URL: jdbc:postgresql://postgres:5432/copilot
+   DB_USER: copilot
+   # Structured JSON logs (spec 59); `docker compose logs backend` shows them.
+   LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+  depends_on:
+   postgres:
+    condition: service_healthy
+  # No ports: only Caddy talks to it.
+
+ caddy:
+  image: caddy:2
+  restart: unless-stopped
+  ports:
+   - "80:80"
+   - "443:443"
+  environment:
+   PUBLIC_IP: ${PUBLIC_IP:?PUBLIC_IP must be set in .env}
+  volumes:
+   - ./Caddyfile:/etc/caddy/Caddyfile:ro
+   # Certificates and ACME account: must survive restarts (Let's Encrypt rate limits).
+   - caddy_data:/data
+   - caddy_config:/config
+  depends_on:
+   - backend
+
+volumes:
+ pgdata:
+ caddy_data:
+ caddy_config:

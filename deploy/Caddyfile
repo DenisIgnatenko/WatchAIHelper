@@ -1,0 +1,24 @@
+# TLS termination and reverse proxy.
+# HTTPS on the bare static IP with a Let's Encrypt IP-address certificate (no domain needed).
+# LE issues IP certificates only under the "shortlived" profile (~6.5 days); Caddy renews them automatically.
+# Sources: docs/architecture.md, section 19.
+#
+# To switch to a domain later: replace {$PUBLIC_IP} with the domain name and remove the tls block.
+
+https://{$PUBLIC_IP} {
+ tls {
+  # Explicit ACME issuer: without it Caddy would use its internal (untrusted) CA for IP addresses.
+  issuer acme {
+   profile shortlived
+  }
+ }
+
+ # Only the API and the health check are public.
+ @api path /v1/* /actuator/health
+ handle @api {
+  reverse_proxy backend:8080
+ }
+ handle {
+  respond 404
+ }
+}
