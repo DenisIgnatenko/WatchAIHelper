@@ -60,7 +60,9 @@ Bundle identifiers and the Apple team are not committed. Each developer supplies
 
 The Watch app is a companion app that also works independently over the network (PI 8.1). It does not depend on the iPhone app being in the foreground.
 
-No widget, complication or capture extension targets in MVP (YAGNI; each also costs an App ID under a free account, PI 1.5). The architecture allows adding them later.
+| `AICopilotWatchWidgets` | watchOS 27 | Widget extension hosting the "Ask AI" Control: the supported route to the Ultra Action Button (PI 7.3, 7.4). Later: complications / Smart Stack (spec 40). |
+
+No iOS widget, complication or capture extension targets in MVP (YAGNI; each also costs an App ID under a free account, PI 1.5). The architecture allows adding them later.
 
 ## 3. Shared Swift modules (`CopilotKit` package)
 
@@ -282,7 +284,7 @@ Camera screen (full screen, opens directly)
 
 **iPhone** (PI 2.1): App Shortcut "Ask with Camera" -> app opens on the camera screen of the active conversation's draft. The user assigns it in Settings > Action Button > Shortcut. The Lock Screen capture extension is deferred to Phase 6 (PI 3).
 
-**Watch Ultra** (PI 7): App Shortcut "Ask AI" -> the app opens with text input. The user assigns it through a Shortcut on the Action Button. No workout/dive APIs.
+**Watch Ultra** (PI 7): Control "Ask AI" (watchOS 26+ Controls) -> the app opens on the main screen, Ask is one tap away. The user assigns the Control to the Action Button. A watch App Shortcut cannot be used there (PI 7.4). No workout/dive APIs.
 
 ## 14. Watch navigation and UI
 

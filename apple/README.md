@@ -22,8 +22,8 @@
 ## Tests
 
 `cd Packages/CopilotKit && swift test`
-(If the repository is inside an iCloud-synced folder, add `--scratch-path /tmp/copilotkit-build`:
-iCloud adds file attributes that break code signing of the test bundle.)
+Keep the repository outside iCloud-synced folders (e.g. not in `~/Documents` with iCloud Drive "Desktop & Documents"):
+iCloud adds file attributes that break code signing and can corrupt `.git`.
 
 ## Layout
 
@@ -34,3 +34,5 @@ iCloud adds file attributes that break code signing of the test bundle.)
 | `Packages/CopilotKit` | Shared Swift package: domain, service contract, mock, request observation |
 | `iOS/` | iOS app (Phase 1: placeholder + "Ask with Camera" App Shortcut) |
 | `Watch/` | watchOS app |
+| `WatchWidgets/` | watchOS widget extension: "Ask AI" Control for the Ultra Action Button |
+| `WatchShared/` | Sources compiled into both the Watch app and the widget extension |

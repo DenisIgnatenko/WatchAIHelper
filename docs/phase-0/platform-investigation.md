@@ -101,9 +101,11 @@ VisionKit's scanner is kept as a Phase 6 experiment: better image quality for do
 |---|---|---|---|
 | 7.1 | Third-party apps appear in Settings > Action Button **only as workout apps (`StartWorkoutIntent`) or dive apps (`StartDiveIntent`)**. | VERIFIED (docs) | [Responding to the Action button on Apple Watch Ultra](https://developer.apple.com/documentation/appintents/actionbuttonarticle) |
 | 7.2 | Built-in Action Button options include **"Shortcut"**, which runs a shortcut from the Shortcuts app. | VERIFIED (docs) | same, and [Use the Action button](https://support.apple.com/guide/watch/use-the-action-button-apda005904ef/watchos) (watchOS 27) |
+| 7.3 | "Controls are available on Apple Watch starting in watchOS 26. People can place your controls in the Control Center, the Smart Stack, and **use them with the Action button on Apple Watch Ultra**." Watch-app controls run their action on the watch. | VERIFIED (docs) | [WWDC25: What's new in watchOS 26](https://developer.apple.com/videos/play/wwdc2025/334/), [StaticControlConfiguration](https://developer.apple.com/documentation/widgetkit/staticcontrolconfiguration) (watchOS 26.0+) |
+| 7.4 | A watch app's App Shortcut ("Ask AI") is visible in Shortcuts on the watch but **cannot be selected** in Settings > Action Button > Shortcut, and the iPhone Shortcuts app cannot build a shortcut with it (the intent exists only in the watch app). | VERIFIED (device), 2026-09-28 | - |
 
-**PROPOSAL.** Provide a watchOS App Shortcut ("Ask AI"). The user builds a one-step shortcut that runs it and assigns it via Action Button > Shortcut. This is a supported path, not a workout/dive workaround (spec 41).
-UNVERIFIED: whether a Personal-Team-signed watchOS App Shortcut appears in the Watch Shortcuts list. Validate in Phase 1.
+**DECISION (revised after 7.4).** The Action Button route is a **watchOS Control** "Ask AI" in a widget extension (`AICopilotWatchWidgets`), which opens the app. Supported API, not a workout/dive workaround (spec 41). The App Shortcut remains for Siri/Spotlight.
+Pending device check V6: the Control is selectable for the Action Button and opens the app.
 
 ## 8. Watch networking and iPhone <-> Watch synchronization
 
@@ -193,6 +195,7 @@ The client code hides this behind one abstraction, so APNs can be added later wi
 - [ ] V3. Watch: continue input on the iPhone ("Apple Watch Keyboard Input").
 - [ ] V4. A Personal-Team-signed app installs on both devices; note the profile expiry date.
 - [ ] V5. The iOS App Shortcut appears in iPhone Settings > Action Button > Shortcut.
-- [ ] V6. The watchOS App Shortcut can be run from a Shortcut assigned to the Watch Action Button.
+- [x] V6a. The watchOS App Shortcut via Action Button > Shortcut: **not possible** (7.4).
+- [ ] V6b. The "Ask AI" Control can be assigned to the Watch Action Button and opens the app.
 - [ ] V7. "Return to Clock" per-app setting exists on watchOS 27.
 - [ ] V8 (Phase 2). H1 / H2 / H3 result delivery timings with the wrist down.
