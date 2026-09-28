@@ -6,14 +6,15 @@ import SwiftUI
 // on the Ultra screen - too few for a glanceable main screen. All sizing lives here, so every screen
 // looks the same and future tuning is a one-place change (DRY).
 //
-// Readability rule (spec 15, UX priority 3): only controls get smaller. Answer text keeps the
-// regular body font.
+// Text sizes were reduced at the owner's request after trying the app on the Ultra 2.
 
 enum CompactStyle {
  /// Minimum list row height. Default is ~44 pt.
  static let rowHeight: CGFloat = 30
  /// Font of button titles and secondary rows.
  static let controlFont: Font = .footnote
+ /// Font of message text in the conversation and of the answer preview.
+ static let messageFont: Font = .footnote
  /// Inner padding of list rows.
  static let rowInsets = EdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8)
  /// App accent color: primary actions (Send). Without it, prominent buttons render grey.

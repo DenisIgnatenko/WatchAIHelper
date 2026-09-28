@@ -82,12 +82,14 @@ public actor MockCopilotService: CopilotService {
 
  // MARK: - Init
 
- public init(scenario: DraftScenario = .empty, timing: Timing = .demo) {
+ /// - Parameter seedDemoConversation: pre-fill the conversation with an exam example
+ ///  (used to review the conversation screen layout in the simulator).
+ public init(scenario: DraftScenario = .empty, timing: Timing = .demo, seedDemoConversation: Bool = false) {
   self.timing = timing
   let conversation = Conversation(id: UUID(), title: "Danish exam", updatedAt: Date())
   self.activeConversationId = conversation.id
   self.conversationsById[conversation.id] = conversation
-  self.messagesByConversation[conversation.id] = []
+  self.messagesByConversation[conversation.id] = seedDemoConversation ? Self.demoMessages(conversationId: conversation.id) : []
 
   let (total, uploaded): (Int, Int) = switch scenario {
   case .empty: (0, 0)
@@ -245,6 +247,24 @@ public actor MockCopilotService: CopilotService {
    ],
    createdAt: Date()
   )
+ }
+
+ /// The spec 67 scenario: three photographed pages, answers, a follow-up about question 4.
+ private static func demoMessages(conversationId: UUID) -> [Message] {
+  let actions = [
+   SuggestedAction(title: "Подробнее", prompt: "Объясни подробнее."),
+   SuggestedAction(title: "Пример", prompt: "Приведи пример."),
+  ]
+  return [
+   Message(id: UUID(), conversationId: conversationId, role: .user, text: "Ответь на вопросы.", attachmentCount: 3, createdAt: Date()),
+   Message(id: UUID(), conversationId: conversationId, role: .assistant, text: "1 — B\n2 — C\n3 — A\n4 — B\n5 — D", createdAt: Date()),
+   Message(id: UUID(), conversationId: conversationId, role: .user, text: "Почему 4 B?", createdAt: Date()),
+   Message(
+    id: UUID(), conversationId: conversationId, role: .assistant,
+    text: "4 — B\n\n«Mens» означает одновременные действия. Здесь второе действие происходит после первого, поэтому подходит «efter at» (B).",
+    suggestedActions: actions, createdAt: Date()
+   ),
+  ]
  }
 
  // MARK: - Mapping records -> domain values

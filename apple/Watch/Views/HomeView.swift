@@ -38,9 +38,8 @@ struct HomeView: View {
 
     if let answer = home.lastAnswer {
      NavigationLink(value: WatchRoute.conversation) {
-      // Answer preview keeps the regular font: reading answers is the main job of the Watch.
       Text(answer.text ?? "")
-       .font(.body)
+       .font(CompactStyle.messageFont)
        .lineLimit(4)
      }
      .compactRow()

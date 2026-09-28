@@ -14,7 +14,10 @@ struct CopilotWatchApp: App {
  /// `@State` keeps the store alive for the whole app lifetime (SwiftUI owns the storage).
  @State private var store = WatchStore(
   // Phase 1: in-process mock. Phase 2 replaces this single line with the HTTP implementation.
-  service: MockCopilotService(scenario: .photosUploading(3)),
+  service: MockCopilotService(
+   scenario: .photosUploading(3),
+   seedDemoConversation: LaunchOptions.demoConversation
+  ),
   // Subtle haptic when an answer is ready (spec 39). No sound, no speech.
   onAnswerReady: { WKInterfaceDevice.current().play(.notification) }
  )
@@ -51,7 +54,10 @@ struct RootView: View {
     }
   }
   // `.task` runs async work when the view appears and cancels it when the view disappears.
-  .task { await store.refresh() }
+  .task {
+   await store.refresh()
+   if LaunchOptions.demoConversation { store.path = [.conversation] }
+  }
   .onChange(of: scenePhase) { _, phase in
    if phase == .active {
     Task { await store.refresh() }
@@ -69,5 +75,18 @@ struct RootView: View {
     }
    }
   }
+ }
+}
+
+/// Debug-only launch arguments (e.g. `xcrun simctl launch <sim> <bundle id> -demoConversation`).
+/// In Release builds every option is `false`, so they cannot affect the real app.
+enum LaunchOptions {
+ /// Starts on the conversation screen with demo messages, to review its layout in the simulator.
+ static var demoConversation: Bool {
+  #if DEBUG
+  CommandLine.arguments.contains("-demoConversation")
+  #else
+  false
+  #endif
  }
 }
