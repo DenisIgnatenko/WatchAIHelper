@@ -1,0 +1,56 @@
+# Configuration. Every value can be overridden by an environment variable of the same name
+# (Docker Compose passes backend/.env on the server).
+spring:
+ application:
+  name: aicopilot
+ config:
+  # Local development: read backend/.env (KEY=value lines) if it exists. Not used in Docker.
+  import: optional:file:.env[.properties]
+ threads:
+  virtual:
+   # Every HTTP request and scheduled task runs on a virtual thread: blocking calls
+   # (JDBC, OpenAI HTTP, long-poll sleeps) do not tie up platform threads.
+   enabled: true
+ datasource:
+  url: ${DB_URL:jdbc:postgresql://localhost:5432/copilot}
+  username: ${DB_USER:copilot}
+  password: ${DB_PASSWORD:copilot}
+
+server:
+ port: 8080
+ # The backend runs behind Caddy on the same host; it trusts X-Forwarded-* from it.
+ forward-headers-strategy: framework
+
+management:
+ endpoints:
+  web:
+   exposure:
+    include: health
+
+copilot:
+ # Bootstrap token of the owner's first device (docs/architecture.md, section 17).
+ client-api-token: ${CLIENT_API_TOKEN:}
+ openai:
+  api-key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-6-sol}
+  reasoning-effort: ${OPENAI_REASONING_EFFORT:low}
+  image-detail: ${OPENAI_IMAGE_DETAIL:high}
+  store: ${OPENAI_STORE:false}
+  timeout: ${OPENAI_TIMEOUT:PT90S}
+  # Retries inside the SDK for one attempt (429/5xx/network). Our own attempts are counted separately.
+  max-retries: ${OPENAI_MAX_RETRIES:2}
+ processing:
+  # How often the worker looks for queued requests.
+  poll-interval: PT0.3S
+  # A request in PROCESSING longer than this is considered abandoned (worker crash) and retried.
+  lease: PT3M
+  # Attempts per AI request before it becomes FAILED.
+  max-attempts: 3
+  # Maximum number of AI requests processed concurrently.
+  max-concurrency: 4
+  # How many recent messages form the conversation context.
+  context-messages: 30
+
+logging:
+ level:
+  com.aicopilot: INFO

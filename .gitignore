@@ -27,3 +27,6 @@ apple/*.xcodeproj/
 # SwiftPM build output
 .build/
 .swiftpm/
+
+# Maven build output
+target/

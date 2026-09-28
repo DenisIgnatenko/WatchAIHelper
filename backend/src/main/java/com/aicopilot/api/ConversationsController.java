@@ -1,0 +1,50 @@
+package com.aicopilot.api;
+
+import com.aicopilot.api.generated.ConversationsApi;
+import com.aicopilot.api.generated.model.ConversationDto;
+import com.aicopilot.api.generated.model.CreateConversationRequestDto;
+import com.aicopilot.api.generated.model.MessageDto;
+import com.aicopilot.api.generated.model.SetActiveConversationRequestDto;
+import com.aicopilot.auth.CurrentUser;
+import com.aicopilot.conversation.ConversationService;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+class ConversationsController implements ConversationsApi {
+
+ private final ConversationService conversations;
+ private final CurrentUser currentUser;
+ private final ApiMapper mapper;
+
+ ConversationsController(ConversationService conversations, CurrentUser currentUser, ApiMapper mapper) {
+  this.conversations = conversations;
+  this.currentUser = currentUser;
+  this.mapper = mapper;
+ }
+
+ @Override
+ public ResponseEntity<List<ConversationDto>> listConversations() {
+  return ResponseEntity.ok(conversations.list(currentUser.id()).stream().map(mapper::conversation).toList());
+ }
+
+ @Override
+ public ResponseEntity<ConversationDto> createConversation(CreateConversationRequestDto request) {
+  var created = conversations.create(currentUser.id(), request.getId());
+  return ResponseEntity.status(HttpStatus.CREATED).body(mapper.conversation(created));
+ }
+
+ @Override
+ public ResponseEntity<Void> setActiveConversation(SetActiveConversationRequestDto request) {
+  conversations.setActive(currentUser.id(), request.getConversationId());
+  return ResponseEntity.noContent().build();
+ }
+
+ @Override
+ public ResponseEntity<List<MessageDto>> listMessages(UUID conversationId) {
+  return ResponseEntity.ok(conversations.messages(currentUser.id(), conversationId).stream().map(mapper::message).toList());
+ }
+}
