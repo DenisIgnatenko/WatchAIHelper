@@ -17,8 +17,14 @@ enum CompactStyle {
  static let messageFont: Font = .footnote
  /// Inner padding of list rows.
  static let rowInsets = EdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8)
+ /// Dimmed palette (owner's request: the app cannot change screen brightness - watchOS has no API for it -
+ /// so the UI itself emits less light). Text is light grey instead of white, the accent a deep blue.
  /// App accent color: primary actions (Send). Without it, prominent buttons render grey.
- static let accent: Color = .blue
+ static let accent = Color(red: 0.16, green: 0.33, blue: 0.62)
+ /// Default text color of the whole app.
+ static let text = Color(white: 0.72)
+ /// Background of the user's message bubbles.
+ static let userBubble = Color(white: 0.16)
  /// Size of buttons placed side by side inside one row.
  static let inlineButtonSize: ControlSize = .mini
 }

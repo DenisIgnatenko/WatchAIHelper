@@ -25,8 +25,9 @@ struct CopilotWatchApp: App {
     // Makes the store available to every view below via `@Environment(WatchStore.self)`
     // (a lightweight dependency injection built into SwiftUI).
     .environment(store)
-    // App-wide accent color for primary actions.
+    // App-wide dimmed palette: accent for primary actions, light-grey default text.
     .tint(CompactStyle.accent)
+    .foregroundStyle(CompactStyle.text)
   }
  }
 }

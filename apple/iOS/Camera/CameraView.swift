@@ -68,8 +68,12 @@ struct CameraView: View {
     }
     .disabled(capturing)
     Spacer()
-    Text(confirmedCount == 0 ? "" : "\(confirmedCount) page\(confirmedCount == 1 ? "" : "s")")
-     .foregroundStyle(.white).frame(width: 100)
+    VStack(spacing: 4) {
+     Text("0.5×").font(.caption.bold()).foregroundStyle(.yellow)
+     Text(confirmedCount == 0 ? "" : "\(confirmedCount) page\(confirmedCount == 1 ? "" : "s")")
+      .foregroundStyle(.white)
+    }
+    .frame(width: 100)
    }
    .padding(.horizontal, 20)
   }

@@ -71,9 +71,12 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, @unchecke
 
  private func configureIfNeeded() throws {
   guard session.inputs.isEmpty else { return }
-  guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
-   throw Failure.noCamera
-  }
+  // The triple-camera virtual device: at its minimum zoom factor it uses the ultra-wide lens ("0.5x"),
+  // so a whole page fits from a low height (owner's request), and it switches to macro automatically
+  // when the phone is close to the paper. Fallback: the plain wide camera.
+  let camera = AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
+   ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+  guard let camera else { throw Failure.noCamera }
   session.beginConfiguration()
   defer { session.commitConfiguration() }
   session.sessionPreset = .photo
@@ -81,5 +84,20 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, @unchecke
   if session.canAddInput(input) { session.addInput(input) }
   if session.canAddOutput(output) { session.addOutput(output) }
   output.maxPhotoQualityPrioritization = .balanced
+  try configureForDocuments(camera)
+ }
+
+ /// Settings that help text recognition of paper pages.
+ private func configureForDocuments(_ camera: AVCaptureDevice) throws {
+  try camera.lockForConfiguration()
+  defer { camera.unlockForConfiguration() }
+  // Widest field of view = ultra-wide lens on the triple camera (zoom 1.0 is shown as "0.5x" in Apple's Camera).
+  camera.videoZoomFactor = camera.minAvailableVideoZoomFactor
+  // Pages are close: restricting autofocus to near distances makes it faster and less likely to hunt.
+  if camera.isAutoFocusRangeRestrictionSupported { camera.autoFocusRangeRestriction = .near }
+  if camera.isFocusModeSupported(.continuousAutoFocus) { camera.focusMode = .continuousAutoFocus }
+  if camera.isExposureModeSupported(.continuousAutoExposure) { camera.exposureMode = .continuousAutoExposure }
+  // Refocus when the phone moves to the next page.
+  camera.isSubjectAreaChangeMonitoringEnabled = true
  }
 }

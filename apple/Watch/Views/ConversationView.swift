@@ -89,7 +89,7 @@ private struct MessageRow: View {
   }
   .padding(message.role == .user ? 6 : 2)
   // User messages get a tinted background; answers are plain text for maximum readability.
-  .background(message.role == .user ? CompactStyle.accent.opacity(0.3) : .clear, in: .rect(cornerRadius: 8))
+  .background(message.role == .user ? CompactStyle.userBubble : .clear, in: .rect(cornerRadius: 8))
   .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
  }
 }

@@ -15,6 +15,10 @@ struct AskWithCameraIntent: OpenIntent {
  static let title: LocalizedStringResource = "Ask with Camera"
  static let description = IntentDescription("Opens the AI Copilot camera to photograph pages.")
 
+ /// iOS 26+: explicitly bring the app to the foreground BEFORE `perform()` runs.
+ /// Belt and braces next to `OpenIntent`, after the Control did not open the app on the device.
+ static let supportedModes: IntentModes = .foreground(.immediate)
+
  /// `OpenIntent` needs a target: the screen to open. There is only one for now.
  @Parameter(title: "Screen")
  var target: CopilotScreen
