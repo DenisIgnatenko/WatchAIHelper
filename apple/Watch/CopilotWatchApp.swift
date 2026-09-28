@@ -60,16 +60,14 @@ struct RootView: View {
     Task { await store.refresh() }
    }
   }
-  // Foreground-only polling while photos are uploading from the iPhone, so "Uploading 1/3…"
-  // turns into "3 photos ready" without user action. `.task(id:)` restarts when the scene phase
-  // changes and is cancelled automatically, so nothing runs while the app is in the background.
+  // Foreground-only polling: photos uploaded from the iPhone, a Send pressed on the iPhone and new answers
+  // appear without user action. `.task(id:)` restarts when the scene phase changes and is cancelled
+  // automatically, so nothing runs while the app is in the background.
   .task(id: scenePhase) {
    guard scenePhase == .active else { return }
    while !Task.isCancelled {
-    try? await Task.sleep(for: .seconds(3))
-    if store.needsPeriodicRefresh {
-     await store.refresh()
-    }
+    try? await Task.sleep(for: store.refreshInterval)
+    await store.refresh()
    }
   }
  }

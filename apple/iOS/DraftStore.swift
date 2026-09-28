@@ -37,6 +37,8 @@ final class DraftStore {
  }
 
  private(set) var conversation: Conversation?
+ /// All conversations for the picker (most recently updated first).
+ private(set) var conversations: [Conversation] = []
  private(set) var draft: DraftDetail?
  private(set) var request: AIRequest?
  private(set) var lastAnswer: Message?
@@ -103,6 +105,41 @@ final class DraftStore {
   } catch {
    errorText = Self.describe(error)
   }
+ }
+
+ // MARK: - Choosing the conversation (the one that receives photos, questions and answers)
+
+ /// The active conversation is stored on the backend, so the Watch switches too (spec 6).
+ func loadConversations() async {
+  conversations = (try? await service.conversations()) ?? conversations
+ }
+
+ func select(_ conversation: Conversation) async {
+  do {
+   try await service.setActiveConversation(id: conversation.id)
+   await resetForConversationChange()
+  } catch {
+   errorText = Self.describe(error)
+  }
+ }
+
+ func newConversation() async {
+  do {
+   _ = try await service.createConversation()
+   await resetForConversationChange()
+  } catch {
+   errorText = Self.describe(error)
+  }
+ }
+
+ private func resetForConversationChange() async {
+  observation?.cancel()
+  request = nil
+  // Photos of the previous conversation's draft stay there; only local decorations are dropped.
+  local = [:]
+  unregistered = []
+  await refresh()
+  await loadConversations()
  }
 
  // MARK: - Adding images (never starts AI inference - Invariant 2)

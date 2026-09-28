@@ -3,15 +3,25 @@ import Foundation
 
 /// "Ask with Camera" (spec 19): opens the app directly on the camera.
 ///
+/// An `OpenIntent` (not a plain `AppIntent` with `openAppWhenRun`): Apple's documentation requires
+/// `OpenIntent` for a Control that must open its app ("Creating controls to perform actions across the system").
+/// With a plain intent the iPhone Action Button ran the Control but the app never opened (device finding).
+///
 /// Compiled into TWO targets (see project.yml, `iOSShared`):
-/// - the iOS app, which performs it (opens itself and shows the camera);
+/// - the iOS app, which performs it (the system brings the app to the foreground first);
 /// - the iOS widget extension, whose Control references it.
-/// The intent type must exist in both places so the system can match them.
-struct AskWithCameraIntent: AppIntent {
+/// Apple requires the intent's target membership in both to open the app.
+struct AskWithCameraIntent: OpenIntent {
  static let title: LocalizedStringResource = "Ask with Camera"
  static let description = IntentDescription("Opens the AI Copilot camera to photograph pages.")
- /// Run by launching the app in the foreground (Face ID unlock is part of the flow).
- static let openAppWhenRun = true
+
+ /// `OpenIntent` needs a target: the screen to open. There is only one for now.
+ @Parameter(title: "Screen")
+ var target: CopilotScreen
+
+ init() {
+  target = .camera
+ }
 
  func perform() async throws -> some IntentResult {
   // The app reads this when it becomes active and opens the camera (see CopilotApp).
@@ -20,6 +30,14 @@ struct AskWithCameraIntent: AppIntent {
   UserDefaults.standard.set(PendingRoute.camera.rawValue, forKey: PendingRoute.key)
   return .result()
  }
+}
+
+/// Screens an intent can open. `AppEnum` makes the values understandable to Shortcuts / Siri.
+enum CopilotScreen: String, AppEnum {
+ case camera
+
+ static let typeDisplayRepresentation: TypeDisplayRepresentation = "Screen"
+ static let caseDisplayRepresentations: [CopilotScreen: DisplayRepresentation] = [.camera: "Camera"]
 }
 
 /// A navigation request handed from an App Intent to the app.

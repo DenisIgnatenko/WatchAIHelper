@@ -78,6 +78,10 @@ struct DraftView: View {
    }
    .navigationTitle(store.conversation?.title ?? "AI Copilot")
    .navigationBarTitleDisplayMode(.inline)
+   .toolbar {
+    // Which conversation receives the photos and the answer - always visible and switchable.
+    ToolbarItem(placement: .topBarTrailing) { ConversationMenu() }
+   }
    .refreshable { await store.refresh() }
   }
  }
@@ -91,6 +95,36 @@ struct DraftView: View {
   case .failed(let reason): reason
   case .cancelled: "Cancelled"
   }
+ }
+}
+
+/// Conversation picker: the checked one is active on the iPhone AND the Watch (stored on the backend).
+private struct ConversationMenu: View {
+ @Environment(DraftStore.self) private var store
+
+ var body: some View {
+  Menu {
+   Button("New conversation", systemImage: "plus") {
+    Task { await store.newConversation() }
+   }
+   Section("Conversations") {
+    ForEach(store.conversations) { conversation in
+     Button {
+      Task { await store.select(conversation) }
+     } label: {
+      if conversation.id == store.conversation?.id {
+       Label(conversation.title, systemImage: "checkmark")
+      } else {
+       Text(conversation.title)
+      }
+     }
+    }
+   }
+  } label: {
+   Image(systemName: "bubble.left.and.bubble.right")
+  }
+  // Load the list when the menu button appears (and again after each switch).
+  .task { await store.loadConversations() }
  }
 }
 

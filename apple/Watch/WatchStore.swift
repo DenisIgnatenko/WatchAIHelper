@@ -59,6 +59,11 @@ final class WatchStore {
    home = snapshot
    messages = try await service.messages(conversationId: snapshot.activeConversation.id)
    errorText = nil
+   // A request may have been sent from the iPhone: follow it too, so its answer appears here
+   // (with the haptic) without leaving and re-entering the screen.
+   if let latest = snapshot.latestRequest, !latest.state.isTerminal, activeRequest?.id != latest.id {
+    observe(latest)
+   }
   } catch {
    errorText = Self.describe(error)
   }
@@ -72,11 +77,12 @@ final class WatchStore {
   }
  }
 
- /// True while something on the main screen changes without our own actions:
- /// photos are uploading from the iPhone. Request progress is tracked separately by the observer.
- var needsPeriodicRefresh: Bool {
-  if case .uploading = home?.draft.readiness { return true }
-  return false
+ /// How often the foreground app re-reads the state. Other devices change it without our actions
+ /// (the iPhone adds photos or presses Send); there is no push (free account), so we poll while visible.
+ /// One small request every few seconds only while the screen is on.
+ var refreshInterval: Duration {
+  if case .uploading = home?.draft.readiness { return .seconds(3) }
+  return .seconds(4)
  }
 
  // MARK: - Actions
