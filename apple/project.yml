@@ -37,12 +37,15 @@ targets:
  AICopilot:
   type: application
   platform: iOS
-  sources: [iOS]
+  # iOSShared: code compiled into both the iOS app and its widget extension (AskWithCameraIntent).
+  sources: [iOS, iOSShared]
   dependencies:
    - package: CopilotKit
      product: CopilotCore
    # Embeds the Watch app into the iOS app (installed on the watch together with it).
    - target: AICopilotWatch
+   # Embeds the iOS widget extension (Controls).
+   - target: AICopilotWidgets
   settings:
    base:
     PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).AICopilot
@@ -91,4 +94,22 @@ targets:
   settings:
    base:
     PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).AICopilot.watchkitapp.widgets
+    SKIP_INSTALL: YES
+
+ # iOS widget extension. Hosts the "Ask with Camera" Control for the iPhone Action Button.
+ AICopilotWidgets:
+  type: app-extension
+  platform: iOS
+  sources: [iOSWidgets, iOSShared]
+  info:
+   path: iOSWidgets/Info.plist
+   properties:
+    CFBundleDisplayName: AI Copilot
+    CFBundleShortVersionString: $(MARKETING_VERSION)
+    CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+    NSExtension:
+     NSExtensionPointIdentifier: com.apple.widgetkit-extension
+  settings:
+   base:
+    PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).AICopilot.widgets
     SKIP_INSTALL: YES

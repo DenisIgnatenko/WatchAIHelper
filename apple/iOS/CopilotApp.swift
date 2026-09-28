@@ -25,18 +25,9 @@ private struct PlaceholderView: View {
  }
 }
 
-/// "Ask with Camera" (spec 19). Phase 1: only opens the app; the camera screen comes in Phase 3.
-/// Its purpose now is to confirm it appears in Settings > Action Button > Shortcut (check V5).
-struct AskWithCameraIntent: AppIntent {
- static let title: LocalizedStringResource = "Ask with Camera"
- static let description = IntentDescription("Opens the AI Copilot camera to photograph pages.")
- static let openAppWhenRun = true
-
- func perform() async throws -> some IntentResult {
-  .result()
- }
-}
-
+/// Registers "Ask with Camera" as an App Shortcut (Siri, Spotlight, Shortcuts app).
+/// The intent itself lives in iOSShared/AskWithCameraIntent.swift. The Action Button route is the
+/// Control in iOSWidgets (more reliable, see docs PI 2.4).
 struct CopilotShortcuts: AppShortcutsProvider {
  static var appShortcuts: [AppShortcut] {
   AppShortcut(

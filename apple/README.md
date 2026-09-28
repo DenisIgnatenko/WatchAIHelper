@@ -34,5 +34,7 @@ iCloud adds file attributes that break code signing and can corrupt `.git`.
 | `Packages/CopilotKit` | Shared Swift package: domain, service contract, mock, request observation |
 | `iOS/` | iOS app (Phase 1: placeholder + "Ask with Camera" App Shortcut) |
 | `Watch/` | watchOS app |
+| `iOSWidgets/` | iOS widget extension: "Ask with Camera" Control for the iPhone Action Button |
+| `iOSShared/` | Sources compiled into both the iOS app and its widget extension |
 | `WatchWidgets/` | watchOS widget extension: "Ask AI" Control for the Ultra Action Button |
 | `WatchShared/` | Sources compiled into both the Watch app and the widget extension |

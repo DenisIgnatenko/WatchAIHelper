@@ -42,9 +42,11 @@ No Apple API is assumed to exist unless it is linked below.
 |---|---|---|---|
 | 2.1 | `AppShortcutsProvider` and `OpenIntent` exist on iOS 16+ and watchOS 9+. An App Shortcut can be assigned to the iPhone Action Button. | VERIFIED (docs) for the API; Action Button assignment UNVERIFIED on iOS 27 | [AppShortcutsProvider](https://developer.apple.com/documentation/appintents/appshortcutsprovider), [OpenIntent](https://developer.apple.com/documentation/appintents/openintent) |
 | 2.2 | iOS 27 App Intents additions: `LongRunningIntent`, `CancellableIntent`, `ExecutionTargets`, `SyncableEntity`, `EntityCollection`, `@UnionValue`. None of them concern the Action Button or the camera. | VERIFIED (docs) | [WWDC26: Discover new capabilities in the App Intents framework](https://developer.apple.com/videos/play/wwdc2026/345/) |
+| 2.4 | On the owner's iPhone (Personal Team signing) the app's App Shortcut does **not** appear in Shortcuts > App Shortcuts, although the build contains correct App Intents metadata (`autoShortcuts: AskWithCameraIntent`) and the app was launched. Cause unknown; possibly related to the missing Siri capability of free accounts (1.2). | VERIFIED (device), 2026-09-28; cause UNVERIFIED | - |
+| 2.5 | iOS Controls (`ControlWidget`, iOS 18+) can be assigned to the iPhone Action Button and launch a capture extension (see 3.1). | VERIFIED (docs) | [StaticControlConfiguration](https://developer.apple.com/documentation/widgetkit/staticcontrolconfiguration), same as 3.1 |
 | 2.3 | SiriKit is deprecated in iOS 27. App Intents is the only way to integrate with the new Siri. | UNVERIFIED (third-party WWDC26 coverage) | - |
 
-**PROPOSAL.** "Ask with Camera" is an App Shortcut backed by an intent that opens the app directly on the camera screen. The user assigns it to the Action Button via Settings > Action Button > Shortcut. Unlocking through Face ID is part of the flow.
+**DECISION (revised after 2.4).** "Ask with Camera" is an intent that opens the app directly on the camera screen, exposed as a **Control** (`AICopilotWidgets` extension) that the user assigns via Settings > Action Button > Controls. The App Shortcut is kept for Siri/Spotlight. Unlocking through Face ID is part of the flow.
 
 ## 3. Lock Screen camera (LockedCameraCapture) - faster alternative, deferred
 
@@ -194,7 +196,8 @@ The client code hides this behind one abstraction, so APNs can be added later wi
 - [ ] V2. Watch: dictate the same phrases in each language.
 - [ ] V3. Watch: continue input on the iPhone ("Apple Watch Keyboard Input").
 - [ ] V4. A Personal-Team-signed app installs on both devices; note the profile expiry date.
-- [ ] V5. The iOS App Shortcut appears in iPhone Settings > Action Button > Shortcut.
+- [x] V5a. The iOS App Shortcut in Shortcuts / Action Button > Shortcut: **not listed** (2.4).
+- [ ] V5b. The "Ask with Camera" Control can be assigned to the iPhone Action Button and opens the app.
 - [x] V6a. The watchOS App Shortcut via Action Button > Shortcut: **not possible** (7.4).
 - [ ] V6b. The "Ask AI" Control can be assigned to the Watch Action Button and opens the app.
 - [ ] V7. "Return to Clock" per-app setting exists on watchOS 27.
