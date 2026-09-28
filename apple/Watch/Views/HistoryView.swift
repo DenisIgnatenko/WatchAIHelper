@@ -26,11 +26,13 @@ struct HistoryView: View {
     }
    }
 
-   // Phase 1 only: lets us try the draft card states without an iPhone app.
-   Section("Mock (Phase 1)") {
-    Button("Draft: 3 photos uploading") { Task { await store.resetMock(scenario: .photosUploading(3)) } }
-    Button("Draft: 3 photos ready") { Task { await store.resetMock(scenario: .photosReady(3)) } }
-    Button("Draft: empty") { Task { await store.resetMock(scenario: .empty) } }
+   // Only without a backend: lets us try the draft card states without an iPhone app.
+   if store.isUsingMock {
+    Section("Mock") {
+     Button("Draft: 3 photos uploading") { Task { await store.resetMock(scenario: .photosUploading(3)) } }
+     Button("Draft: 3 photos ready") { Task { await store.resetMock(scenario: .photosReady(3)) } }
+     Button("Draft: empty") { Task { await store.resetMock(scenario: .empty) } }
+    }
    }
   }
   .compactList()

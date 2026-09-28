@@ -11,5 +11,6 @@ Private AI assistant for Apple Watch Ultra 2 and iPhone, backed by a private bac
 
 - Phase 0 (investigation and design): **done**.
 - Phase 1 (Watch spike with mock backend): **done** - device checks V1-V6 passed (V7 open, V8 belongs to Phase 2).
-- Next: Phase 2 - real backend (Java/Spring) + OpenAI, text only.
+- Phase 2 (backend + OpenAI, text): **in progress** - backend, deploy scripts and Watch HTTP client done and tested
+  locally end-to-end; remaining: deploy to Lightsail, run on the Watch, result-delivery check V8.
 - Apple clients: see [../apple/README.md](../apple/README.md).

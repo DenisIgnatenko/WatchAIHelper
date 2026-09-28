@@ -1,0 +1,8 @@
+# swift-openapi-generator configuration.
+# openapi.yaml in this folder is a symlink to api/openapi.yaml - the single REST contract (DRY).
+generate:
+ - types
+ - client
+# Swift-style names: `idempotencyKey`, `.waitingForAttachments` instead of `Idempotency_hyphen_Key`.
+namingStrategy: idiomatic
+accessModifier: public

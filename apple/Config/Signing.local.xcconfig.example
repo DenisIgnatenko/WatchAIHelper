@@ -5,3 +5,8 @@ DEVELOPMENT_TEAM = XXXXXXXXXX
 
 // Reverse-DNS prefix unique to you. Free (Personal Team) accounts need globally unique bundle ids.
 BUNDLE_ID_PREFIX = com.yourname
+
+// Backend host (static IP or domain, without https://) and this device's token (CLIENT_API_TOKEN of the backend).
+// Interim until device pairing exists (Phase 5): the token is embedded into your own build only.
+COPILOT_HOST =
+COPILOT_DEVICE_TOKEN =

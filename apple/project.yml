@@ -60,6 +60,12 @@ targets:
   platform: watchOS
   # WatchShared: code compiled into both the Watch app and its widget extension (AskAIIntent).
   sources: [Watch, WatchShared]
+  # Backend connection from the xcconfig (see Config/Base.xcconfig). Merged with the generated Info.plist.
+  info:
+   path: Watch/Info.plist
+   properties:
+    CopilotHost: $(COPILOT_HOST)
+    CopilotDeviceToken: $(COPILOT_DEVICE_TOKEN)
   dependencies:
    - package: CopilotKit
      product: CopilotCore

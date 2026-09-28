@@ -5,5 +5,10 @@
 // Placeholder, overridden by the local file.
 BUNDLE_ID_PREFIX = com.example
 
+// Backend connection (Phase 2). Empty = the apps use the in-process mock (simulator, demos).
+// Real values go into Signing.local.xcconfig, never into git.
+COPILOT_HOST =
+COPILOT_DEVICE_TOKEN =
+
 // `#include?` = optional include: the build still works (unsigned, simulator only) without the file.
 #include? "Signing.local.xcconfig"

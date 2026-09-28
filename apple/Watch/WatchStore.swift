@@ -37,6 +37,8 @@ final class WatchStore {
 
  private var service: any CopilotService
  private var observer: LongPollRequestObserver
+ /// Mock-only debug tools (scenario switching) are shown only when running without a backend.
+ var isUsingMock: Bool { service is MockCopilotService }
  private let onAnswerReady: @MainActor () -> Void
  /// The running observation; cancelled when a new request replaces it.
  private var observationTask: Task<Void, Never>?
@@ -163,6 +165,7 @@ final class WatchStore {
   case .draftAlreadySubmitted: "Already sent from another device."
   case .emptyDraft: "Nothing to send."
   case .notFound: "Not found."
+  case .unauthorized: "Device not authorized."
   case .unavailable: "Server unavailable."
   case nil: "Something went wrong."
   }

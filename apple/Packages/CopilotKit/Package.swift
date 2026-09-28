@@ -8,8 +8,10 @@
 // - the compiler enforces the boundary: the package cannot see app/UI code.
 //
 // Modules:
-// - CopilotCore: domain models, service contract, mock service, request observation.
-// - CopilotAPI (Phase 2): client generated from api/openapi.yaml. Not created yet (YAGNI).
+// - CopilotAPI: HTTP client + transport DTOs GENERATED from api/openapi.yaml (scripts/generate-api.sh)
+//  (the same contract the Java backend is generated from, so client and server cannot drift).
+// - CopilotCore: domain models, service contract, live (HTTP) and mock services, request observation.
+//  Only CopilotCore sees the generated DTOs; the apps see domain models (spec 52).
 
 import PackageDescription
 
@@ -24,9 +26,32 @@ let package = Package(
  products: [
   .library(name: "CopilotCore", targets: ["CopilotCore"]),
  ],
+ dependencies: [
+  // Apple's OpenAPI tooling: build plugin (generator), runtime types and a URLSession transport.
+  .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.13.1"),
+  .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.12.1"),
+  .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.3.1"),
+ ],
  targets: [
   .target(
+   name: "CopilotAPI",
+   dependencies: [
+    .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+   ],
+   // Generated sources are committed (Sources/CopilotAPI/GeneratedSources) and refreshed with
+   // apple/scripts/generate-api.sh. A build plugin is not used: Xcode runs it once per platform
+   // (iOS + embedded watchOS app) into the same folder and fails with "Multiple commands produce".
+   // Generator inputs live next to the output but are not compiled or bundled.
+   exclude: ["openapi.yaml", "openapi-generator-config.yaml"],
+   swiftSettings: [.swiftLanguageMode(.v6)]
+  ),
+  .target(
    name: "CopilotCore",
+   dependencies: [
+    "CopilotAPI",
+    .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+    .product(name: "OpenAPIURLSession", package: "swift-openapi-urlsession"),
+   ],
    swiftSettings: [
     // Swift 6 language mode: full data-race safety checking at compile time.
     .swiftLanguageMode(.v6),
@@ -34,7 +59,7 @@ let package = Package(
   ),
   .testTarget(
    name: "CopilotCoreTests",
-   dependencies: ["CopilotCore"],
+   dependencies: ["CopilotCore", "CopilotAPI"],
    swiftSettings: [.swiftLanguageMode(.v6)]
   ),
  ]

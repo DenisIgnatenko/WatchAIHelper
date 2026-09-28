@@ -13,11 +13,8 @@ import WatchKit
 struct CopilotWatchApp: App {
  /// `@State` keeps the store alive for the whole app lifetime (SwiftUI owns the storage).
  @State private var store = WatchStore(
-  // Phase 1: in-process mock. Phase 2 replaces this single line with the HTTP implementation.
-  service: MockCopilotService(
-   scenario: .photosUploading(3),
-   seedDemoConversation: LaunchOptions.demoConversation
-  ),
+  // Real backend when configured, otherwise the in-process mock (see AppConfiguration).
+  service: AppConfiguration.makeService(),
   // Subtle haptic when an answer is ready (spec 39). No sound, no speech.
   onAnswerReady: { WKInterfaceDevice.current().play(.notification) }
  )

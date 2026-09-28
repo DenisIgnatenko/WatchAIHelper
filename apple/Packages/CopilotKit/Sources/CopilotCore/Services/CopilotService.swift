@@ -50,6 +50,8 @@ public enum CopilotServiceError: Error, Equatable, Sendable {
  /// The draft has neither text nor attachments.
  case emptyDraft
  case notFound
+ /// Missing or invalid device token (backend `401`): the app is not configured correctly.
+ case unauthorized
  /// Network or backend unavailable. Safe to retry with the same idempotency key.
  case unavailable
 }
