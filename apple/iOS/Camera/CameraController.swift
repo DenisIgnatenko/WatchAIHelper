@@ -31,7 +31,6 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, @unchecke
      try configureIfNeeded()
      observeInterruptionsOnce()
      if !session.isRunning { session.startRunning() }
-     diagnose("after start")
      continuation.resume()
     } catch {
      continuation.resume(throwing: error)
@@ -50,25 +49,10 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, @unchecke
   observing = true
   let center = NotificationCenter.default
   for name in [AVCaptureSession.interruptionEndedNotification, AVCaptureSession.runtimeErrorNotification] {
-   center.addObserver(forName: name, object: session, queue: nil) { [weak self] note in
-    self?.diagnose("\(note.name.rawValue) \(note.userInfo ?? [:])")
+   center.addObserver(forName: name, object: session, queue: nil) { [weak self] _ in
     self?.restart()
    }
   }
-  center.addObserver(forName: AVCaptureSession.wasInterruptedNotification, object: session, queue: nil) { [weak self] note in
-   self?.diagnose("interrupted \(note.userInfo ?? [:])")
-  }
- }
-
- /// Temporary diagnostics for the black-preview issue (printed to the device console in Debug builds).
- private func diagnose(_ event: String) {
-  #if DEBUG
-  let device = (session.inputs.first as? AVCaptureDeviceInput)?.device
-  print("[Camera] \(event) | running=\(session.isRunning) interrupted=\(session.isInterrupted)",
-   "device=\(device?.deviceType.rawValue ?? "-") active=\(device?.activeFormat.description ?? "-")",
-   "zoom=\(device?.videoZoomFactor ?? 0) min=\(device?.minAvailableVideoZoomFactor ?? 0)",
-   "connected=\(device?.isConnected ?? false) suspended=\(device?.isSuspended ?? false)")
-  #endif
  }
 
  /// Starts the session again if it is not running (idempotent). Also called when the app becomes active.
@@ -112,9 +96,8 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, @unchecke
  private func configureIfNeeded() throws {
   guard session.inputs.isEmpty else { return }
   // The physical ultra-wide camera ("0.5x"): a whole page fits from a low height (owner's request), and on Pro
-  // models this lens also does macro, so close shots stay sharp. A physical device is used on purpose: with the
-  // triple-camera virtual device at zoom 1.0 the session ran but the preview stayed black (device finding).
-  // Fallback: the wide camera.
+  // models this lens also does macro, so close shots stay sharp. Simpler than the triple-camera virtual device
+  // with a zoom factor. Fallback: the wide camera.
   let camera = AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back)
    ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
   guard let camera else { throw Failure.noCamera }
