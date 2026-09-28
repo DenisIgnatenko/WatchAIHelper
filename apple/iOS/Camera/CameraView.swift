@@ -15,6 +15,7 @@ struct CameraView: View {
  @State private var errorText: String?
  /// Pages confirmed in this camera session (counter on the Done button).
  @State private var confirmedCount = 0
+ @Environment(\.scenePhase) private var scenePhase
 
  var body: some View {
   ZStack {
@@ -32,9 +33,13 @@ struct CameraView: View {
     controls.padding(.bottom, 24)
    }
   }
-  .task {
+  // (Re)start whenever the app is active: the camera can only run in the foreground, and opening from
+  // Shortcuts shows this screen slightly before the app becomes active.
+  .task(id: scenePhase) {
+   guard scenePhase == .active else { return }
    do {
     try await camera.start()
+    errorText = nil
    } catch {
     errorText = "Camera unavailable. Allow camera access in Settings."
    }

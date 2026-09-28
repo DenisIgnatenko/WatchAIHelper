@@ -29,12 +29,36 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, @unchecke
    queue.async { [self] in
     do {
      try configureIfNeeded()
+     observeInterruptionsOnce()
      if !session.isRunning { session.startRunning() }
      continuation.resume()
     } catch {
      continuation.resume(throwing: error)
     }
    }
+  }
+ }
+
+ private var observing = false
+
+ /// The system may interrupt or fail the session - e.g. when the app is opened from Shortcuts via
+ /// aicopilot://camera and is not fully in the foreground yet. A session started in that moment does not
+ /// resume by itself, which left the preview black. Restart it when the interruption ends or after an error.
+ private func observeInterruptionsOnce() {
+  guard !observing else { return }
+  observing = true
+  let center = NotificationCenter.default
+  for name in [AVCaptureSession.interruptionEndedNotification, AVCaptureSession.runtimeErrorNotification] {
+   center.addObserver(forName: name, object: session, queue: nil) { [weak self] _ in
+    self?.restart()
+   }
+  }
+ }
+
+ /// Starts the session again if it is not running (idempotent). Also called when the app becomes active.
+ func restart() {
+  queue.async { [session] in
+   if !session.isRunning { session.startRunning() }
   }
  }
 
