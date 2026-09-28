@@ -27,6 +27,9 @@ struct CopilotWatchApp: App {
     .environment(store)
     // App-wide accent color for primary actions.
     .tint(CompactStyle.accent)
+    // No autocorrection in any text input of the app: it rewrites Danish words typed on purpose
+    // (owner's request). An environment value, so every TextFieldLink below inherits it.
+    .autocorrectionDisabled(true)
   }
  }
 }
