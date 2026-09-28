@@ -379,6 +379,8 @@ To be required later: a paid Apple Developer account (TestFlight), a privacy pol
 - TLS without a domain: Lightsail static IP + a Let's Encrypt **IP-address certificate** (generally available since 2026-01-15, only with the `shortlived` profile, 160-hour lifetime, renewed automatically by Caddy). Sources: [Let's Encrypt announcement](https://letsencrypt.org/2026/01/15/6day-and-ip-general-availability), [LE profiles](https://letsencrypt.org/docs/profiles/), Caddy issue [#7399](https://github.com/caddyserver/caddy/issues/7399) (IP issuance with `shortlived` fixed, closed 2026-04-25).
 - To verify in Phase 2: ATS accepts the IP-SAN certificate on iOS and watchOS. Fallback: buy a domain (about $14/year) and switch the A record; the clients only change the base URL.
 - The static IP must stay attached to the instance, because the clients store the base URL.
+- Verified 2026-09-28 on 18.197.218.28: certificate issued (issuer Let's Encrypt YE2, SAN `IP Address`).
+  Caddy needs `default_sni` because TLS clients send no SNI for IP addresses.
 - Backups: Lightsail automatic snapshots (daily).
 - Local development: the same `docker-compose.yml`. Phase 1 needs no backend (in-app mock).
 

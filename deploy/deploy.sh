@@ -41,7 +41,7 @@ rm -f "$ROOT/deploy/app.jar"
 "${SSH[@]}" "cd $REMOTE && docker compose up -d --build --remove-orphans && docker image prune -f >/dev/null"
 
 echo "== 4/4 Health check (first start also obtains the TLS certificate)"
-for _ in $(seq 1 60); do
+for _ in $(seq 1 100); do
  if curl -fsS "https://$IP/actuator/health" 2>/dev/null | grep -q UP; then
   echo "OK: https://$IP is up"
   exit 0

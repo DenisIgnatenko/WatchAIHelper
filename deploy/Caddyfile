@@ -3,7 +3,13 @@
 # LE issues IP certificates only under the "shortlived" profile (~6.5 days); Caddy renews them automatically.
 # Sources: docs/architecture.md, section 19.
 #
-# To switch to a domain later: replace {$PUBLIC_IP} with the domain name and remove the tls block.
+# To switch to a domain later: replace {$PUBLIC_IP} with the domain name, remove the tls block and default_sni.
+
+{
+ # Clients never send SNI for an IP address (RFC 6066), so Caddy must know which certificate
+ # to present to connections without SNI. Without this the TLS handshake fails with "internal error".
+ default_sni {$PUBLIC_IP}
+}
 
 https://{$PUBLIC_IP} {
  tls {
