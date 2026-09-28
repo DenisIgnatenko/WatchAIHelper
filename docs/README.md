@@ -5,12 +5,13 @@ Private AI assistant for Apple Watch Ultra 2 and iPhone, backed by a private bac
 | Document | Content |
 |---|---|
 | [phase-0/platform-investigation.md](phase-0/platform-investigation.md) | Verified platform capabilities and limitations (Apple, OpenAI), with sources |
+| [phase-3-image-benchmark.md](phase-3-image-benchmark.md) | Model / image-size benchmark on real exam photos |
 | [architecture.md](architecture.md) | MVP architecture: structure, data model, API, state machines, sync, testing, phases |
 
 ## Current status
 
 - Phase 0 (investigation and design): **done**.
 - Phase 1 (Watch spike with mock backend): **done** - device checks V1-V6 passed (V7 open, V8 belongs to Phase 2).
-- Phase 2 (backend + OpenAI, text): **in progress** - backend, deploy scripts and Watch HTTP client done and tested
-  locally end-to-end; remaining: deploy to Lightsail, run on the Watch, result-delivery check V8.
+- Phase 2 (backend + OpenAI, text): **done** - deployed on Lightsail (https://<static IP>), Watch asks and gets answers, V8 ok.
+- Phase 3 (photos from iPhone): **in progress**. Image parameters: [phase-3-image-benchmark.md](phase-3-image-benchmark.md).
 - Apple clients: see [../apple/README.md](../apple/README.md).

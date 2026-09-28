@@ -204,4 +204,4 @@ Results 2026-09-28 (owner, Apple Watch Ultra 2 / iPhone 17 Pro Max): V1-V6 confi
 - [x] V6a. The watchOS App Shortcut via Action Button > Shortcut: **not possible** (7.4).
 - [x] V6b. The "Ask AI" Control can be assigned to the Watch Action Button and opens the app.
 - [ ] V7. "Return to Clock" per-app setting exists on watchOS 27.
-- [ ] V8 (Phase 2). H1 / H2 / H3 result delivery timings with the wrist down.
+- [x] V8 (Phase 2). H1 (foreground long-poll + haptic) with the wrist down: works per owner, 2026-09-28 (no timing measurements). H2/H3 not needed for now.
