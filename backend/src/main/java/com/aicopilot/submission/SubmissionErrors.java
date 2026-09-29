@@ -21,4 +21,20 @@ public final class SubmissionErrors {
    super("The draft has neither text nor attachments");
   }
  }
+
+ /** The question was already sent to the AI (HTTP 409). */
+ public static class RequestNotCancellable extends RuntimeException {
+
+  public RequestNotCancellable() {
+   super("The request can no longer be cancelled");
+  }
+ }
+
+ /** Only a failed answer to the latest question can be retried (HTTP 409). */
+ public static class RequestNotRetryable extends RuntimeException {
+
+  public RequestNotRetryable(String reason) {
+   super(reason);
+  }
+ }
 }

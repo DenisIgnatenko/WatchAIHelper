@@ -1,5 +1,6 @@
 package com.aicopilot.submission;
 
+import static com.aicopilot.common.Db.instant;
 import static com.aicopilot.common.Db.ts;
 
 import com.aicopilot.ai.ResponseMode;
@@ -28,7 +29,8 @@ public class AiRequestRepository {
   rs.getObject("assistant_message_id", UUID.class),
   ResponseMode.valueOf(rs.getString("response_mode")),
   rs.getInt("attempt_count"),
-  rs.getString("last_error_code"));
+  rs.getString("last_error_code"),
+  instant(rs, "created_at"));
 
  private final JdbcClient jdbc;
 
@@ -52,8 +54,9 @@ public class AiRequestRepository {
    .query(MAPPER).optional();
  }
 
+ /** The request of a draft that is not cancelled (a cancelled Send leaves its request behind). */
  Optional<AiRequest> findByDraft(UUID draftId) {
-  return jdbc.sql("select * from ai_requests where draft_id = :draftId")
+  return jdbc.sql("select * from ai_requests where draft_id = :draftId and state <> 'CANCELLED'")
    .param("draftId", draftId)
    .query(MAPPER).optional();
  }
@@ -94,6 +97,28 @@ public class AiRequestRepository {
  /** The failed image was re-uploaded or removed, others are still uploading: wait again. */
  void markWaiting(UUID id, Instant now) {
   jdbc.sql("update ai_requests set state = 'WAITING_FOR_ATTACHMENTS', updated_at = :now where id = :id and state = 'BLOCKED'")
+   .param("id", id).param("now", ts(now))
+   .update();
+ }
+
+ /** Cancel Send: only before the question became a message (spec 26). */
+ void markCancelled(UUID id, Instant now) {
+  jdbc.sql("""
+    update ai_requests set state = 'CANCELLED', completed_at = :now, updated_at = :now
+    where id = :id and state in ('WAITING_FOR_ATTACHMENTS', 'BLOCKED')
+    """)
+   .param("id", id).param("now", ts(now))
+   .update();
+ }
+
+ /** User Retry of a failed answer: a fresh set of attempts for the same question. */
+ void requeueFailed(UUID id, Instant now) {
+  jdbc.sql("""
+    update ai_requests
+    set state = 'QUEUED', attempt_count = 0, not_before = null, last_error_code = null, completed_at = null,
+        updated_at = :now
+    where id = :id and state = 'FAILED'
+    """)
    .param("id", id).param("now", ts(now))
    .update();
  }

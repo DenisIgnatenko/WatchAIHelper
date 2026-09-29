@@ -5,6 +5,7 @@ import com.aicopilot.api.generated.model.ConversationDto;
 import com.aicopilot.api.generated.model.ConversationModeDto;
 import com.aicopilot.api.generated.model.CreateConversationRequestDto;
 import com.aicopilot.api.generated.model.MessageDto;
+import com.aicopilot.api.generated.model.RenameConversationRequestDto;
 import com.aicopilot.api.generated.model.SetActiveConversationRequestDto;
 import com.aicopilot.auth.CurrentUser;
 import com.aicopilot.conversation.Conversation;
@@ -38,6 +39,17 @@ class ConversationsController implements ConversationsApi {
   var mode = request.getMode() == ConversationModeDto.DANISH_EXAM ? Conversation.Mode.DANISH_EXAM : Conversation.Mode.GENERAL;
   var created = conversations.create(currentUser.id(), request.getId(), mode);
   return ResponseEntity.status(HttpStatus.CREATED).body(mapper.conversation(created));
+ }
+
+ @Override
+ public ResponseEntity<ConversationDto> renameConversation(UUID conversationId, RenameConversationRequestDto request) {
+  return ResponseEntity.ok(mapper.conversation(conversations.rename(currentUser.id(), conversationId, request.getTitle())));
+ }
+
+ @Override
+ public ResponseEntity<Void> deleteConversation(UUID conversationId) {
+  conversations.delete(currentUser.id(), conversationId);
+  return ResponseEntity.noContent().build();
  }
 
  @Override

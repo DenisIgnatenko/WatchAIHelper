@@ -28,7 +28,7 @@ echo "== 2/4 Server .env"
 if ! "${SSH[@]}" "test -f $REMOTE/.env"; then
  # Only the keys the server needs; DB settings are container-internal.
  {
-  grep -E '^(OPENAI_[A-Z_]+|CLIENT_API_TOKEN|IMAGE_RETENTION_DAYS|ATTACHMENT_UPLOAD_TIMEOUT_MINUTES)=' "$ROOT/backend/.env"
+  grep -E '^(OPENAI_[A-Z0-9_]+|CLIENT_API_TOKEN|IMAGE_RETENTION_DAYS|ATTACHMENT_UPLOAD_TIMEOUT_MINUTES|USAGE_TIME_ZONE)=' "$ROOT/backend/.env"
   echo "DB_PASSWORD=$(openssl rand -hex 24)"
   echo "PUBLIC_IP=$IP"
  } | "${SSH[@]}" "umask 077 && cat > $REMOTE/.env"

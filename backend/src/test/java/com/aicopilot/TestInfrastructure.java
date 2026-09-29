@@ -54,8 +54,13 @@ public class TestInfrastructure {
   }
 
   public static AiReply reply(String text) {
-   return new AiReply(text, List.of(new Suggestion("Подробнее", "Объясни подробнее.")), "fake-model",
-    new Usage(10L, 5L));
+   return titledReply(text, null);
+  }
+
+  /** An answer that also suggests a conversation title. Usage: 10 input tokens (4 cached), 5 output. */
+  public static AiReply titledReply(String text, String title) {
+   return new AiReply(text, List.of(new Suggestion("Подробнее", "Объясни подробнее.")), title, "fake-model",
+    new Usage(10L, 4L, 0L, 5L));
   }
 
   public static Supplier<AiReply> failing(boolean transientFailure) {

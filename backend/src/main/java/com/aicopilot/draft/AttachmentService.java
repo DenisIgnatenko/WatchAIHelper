@@ -30,6 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class AttachmentService {
 
  private static final Logger log = LoggerFactory.getLogger(AttachmentService.class);
+ private static final int PURGE_BATCH = 200;
 
  private final AttachmentRepository attachments;
  private final DraftService drafts;
@@ -86,22 +87,27 @@ public class AttachmentService {
   if (drafts.get(attachment.draftId()).state() == Draft.State.CONSUMED) {
    throw new DraftErrors.DraftNotEditable();
   }
-  String key = userId + "/" + attachmentId;
+  String key = Attachment.blobKey(userId, attachmentId);
   StoredBlob stored = store(key, content, attachment.byteSize());
   if (stored.tooLarge() || stored.size() != attachment.byteSize() || !Objects.equals(stored.sha256(), attachment.sha256())) {
-   deleteQuietly(key);
+   drafts.deleteBlobQuietly(key);
    throw new DraftErrors.ContentMismatch();
   }
   Attachment result = tx.execute(status -> {
    var current = attachments.lock(attachmentId);
    if (current.isEmpty()) {
-    // Removed while the bytes were uploading.
-    throw new DraftErrors.DraftNotEditable();
+    return null;
    }
    attachments.markUploaded(attachmentId, key, clock.instant());
-   events.publishEvent(new AttachmentsChangedEvent(attachment.draftId()));
+   // The draft may have moved (a cancelled Send merged it), so the event uses the current row.
+   events.publishEvent(new AttachmentsChangedEvent(current.get().draftId()));
    return attachments.lock(attachmentId).orElseThrow();
   });
+  if (result == null) {
+   // Removed (or its conversation deleted) while the bytes were uploading: do not keep orphaned bytes.
+   drafts.deleteBlobQuietly(key);
+   throw new DraftErrors.DraftNotEditable();
+  }
   log.info("Uploaded attachmentId={} draftId={} bytes={}", attachmentId, attachment.draftId(), stored.size());
   return result;
  }
@@ -122,7 +128,7 @@ public class AttachmentService {
    return attachment.get().blobKey();
   });
   if (blobKey != null) {
-   deleteQuietly(blobKey);
+   drafts.deleteBlobQuietly(blobKey);
   }
  }
 
@@ -148,19 +154,35 @@ public class AttachmentService {
   });
  }
 
+ /**
+  * Privacy (spec 47): deletes the bytes of images uploaded longer ago than the retention period
+  * ({@code IMAGE_RETENTION_DAYS}). The database is updated first, then the file is deleted: a failure can leave
+  * an unreferenced file (logged), never a row that points to a missing file.
+  */
+ @Scheduled(fixedDelayString = "PT1H", initialDelayString = "PT1M")
+ public void purgeExpiredImages() {
+  var uploadedBefore = clock.instant().minus(properties.attachments().retention());
+  int purged = 0;
+  List<Attachment> batch;
+  do {
+   batch = tx.execute(status -> {
+    List<Attachment> expired = attachments.expired(uploadedBefore, PURGE_BATCH);
+    expired.forEach(a -> attachments.markPurged(a.id(), clock.instant()));
+    return expired;
+   });
+   batch.forEach(a -> drafts.deleteBlobQuietly(a.blobKey()));
+   purged += batch.size();
+  } while (batch.size() == PURGE_BATCH);
+  if (purged > 0) {
+   log.info("Retention: deleted {} image(s) uploaded before {}", purged, uploadedBefore);
+  }
+ }
+
  private StoredBlob store(String key, InputStream content, long expectedSize) {
   try {
    return blobs.put(key, content, expectedSize);
   } catch (IOException e) {
    throw new UncheckedIOException("Storing " + key + " failed", e);
-  }
- }
-
- private void deleteQuietly(String key) {
-  try {
-   blobs.delete(key);
-  } catch (IOException e) {
-   log.warn("Could not delete blob {}", key, e);
   }
  }
 

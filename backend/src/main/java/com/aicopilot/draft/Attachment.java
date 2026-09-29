@@ -30,5 +30,13 @@ public record Attachment(
 
  public enum Source { CAMERA, PHOTO_LIBRARY }
 
+ /**
+  * Where the bytes of an image are stored. Derived from ids only, so the key of an image is known even while
+  * its upload is still running (conversation deletion relies on this).
+  */
+ public static String blobKey(UUID userId, UUID attachmentId) {
+  return userId + "/" + attachmentId;
+ }
+
  public enum State { PENDING, UPLOADED, FAILED }
 }

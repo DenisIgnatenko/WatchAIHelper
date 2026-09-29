@@ -3,15 +3,11 @@ package com.aicopilot;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 import com.aicopilot.ai.AiEngine.Turn;
 import com.aicopilot.draft.AttachmentService;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.HexFormat;
-import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,45 +141,5 @@ class AttachmentFlowIT extends ApiTestBase {
   // Registration is idempotent by id: repeating it does not add a second image.
   register(draftId, expected, "camera", id);
   assertThat(count("attachments")).isEqualTo(1);
- }
-
- // --- helpers ---
-
- private String register(String draftId, byte[] content, String source) throws Exception {
-  return register(draftId, content, source, UUID.randomUUID().toString());
- }
-
- private String register(String draftId, byte[] content, String source, String attachmentId) throws Exception {
-  var result = mvc.perform(authorized(put("/v1/drafts/{d}/attachments/{a}", draftId, attachmentId))
-    .contentType(MediaType.APPLICATION_JSON)
-    .content(json.writeValueAsString(registration(content, source))))
-   .andReturn();
-  return body(result, 200).at("/id").asString();
- }
-
- private Map<String, Object> registration(byte[] content, String source) throws Exception {
-  String sha = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
-  return Map.of("mimeType", "image/jpeg", "byteSize", content.length, "sha256", sha, "source", source);
- }
-
- private JsonNode upload(String attachmentId, byte[] content, int expectedStatus) throws Exception {
-  var result = mvc.perform(authorized(put("/v1/attachments/{a}/content", attachmentId))
-    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-    .content(content))
-   .andReturn();
-  return body(result, expectedStatus);
- }
-
- private JsonNode submitWithoutText(String draftId, int expectedStatus) throws Exception {
-  var result = mvc.perform(authorized(post("/v1/drafts/{id}/submit", draftId))
-    .header("Idempotency-Key", UUID.randomUUID().toString())
-    .contentType(MediaType.APPLICATION_JSON)
-    .content("{}"))
-   .andReturn();
-  return body(result, expectedStatus);
- }
-
- private JsonNode requestState(String requestId) throws Exception {
-  return body(mvc.perform(authorized(get("/v1/requests/{id}", requestId))).andReturn(), 200);
  }
 }

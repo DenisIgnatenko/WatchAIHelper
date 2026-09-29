@@ -1,6 +1,7 @@
 package com.aicopilot.submission;
 
 import com.aicopilot.ai.ResponseMode;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -17,7 +18,8 @@ public record AiRequest(
  UUID assistantMessageId,
  ResponseMode responseMode,
  int attemptCount,
- String lastErrorCode
+ String lastErrorCode,
+ Instant createdAt
 ) {
 
  public enum State {

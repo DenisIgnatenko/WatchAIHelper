@@ -5,8 +5,12 @@ import com.aicopilot.storage.BlobStorage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Clock;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** Draft lifecycle and read access to draft images. */
 @Service
 public class DraftService {
+
+ private static final Logger log = LoggerFactory.getLogger(DraftService.class);
 
  private final DraftRepository drafts;
  private final AttachmentRepository attachments;
@@ -56,6 +62,53 @@ public class DraftService {
   drafts.consume(draftId, clock.instant());
  }
 
+ /**
+  * Cancelled Send: the frozen draft becomes the editable draft again, with its images and text (spec 26:
+  * input is never silently discarded). The caller holds the lock of {@code frozen}.
+  *
+  * <p>If the user already started a new draft meanwhile (e.g. took more photos), the two are merged: the new
+  * images go after the old ones, and the new draft disappears. Its images keep their ids, so uploads that are
+  * still running complete normally.
+  */
+ @Transactional(propagation = Propagation.MANDATORY)
+ public void reopen(Draft frozen) {
+  String text = frozen.text();
+  var newer = drafts.findOpen(frozen.conversationId());
+  if (newer.isPresent()) {
+   Draft open = drafts.lock(frozen.userId(), newer.get().id()).orElseThrow();
+   attachments.moveAll(open.id(), frozen.id());
+   text = mergeTexts(text, open.text());
+   drafts.delete(open.id());
+   log.info("Merged draftId={} into reopened draftId={}", open.id(), frozen.id());
+  }
+  drafts.reopen(frozen.id(), text, clock.instant());
+ }
+
+ /**
+  * Locks all drafts of a conversation (new images cannot be registered meanwhile) and returns the storage keys
+  * of all their images. Used right before the conversation is deleted.
+  */
+ @Transactional(propagation = Propagation.MANDATORY)
+ public List<String> lockDraftsAndListBlobKeys(UUID userId, UUID conversationId) {
+  drafts.lockAllOfConversation(conversationId);
+  return attachments.idsByConversation(conversationId).stream()
+   .map(id -> Attachment.blobKey(userId, id))
+   .toList();
+ }
+
+ /** Best effort: the rows are already gone, a leftover file is only logged. */
+ public void deleteBlobsQuietly(Collection<String> keys) {
+  keys.forEach(this::deleteBlobQuietly);
+ }
+
+ public void deleteBlobQuietly(String key) {
+  try {
+   blobs.delete(key);
+  } catch (IOException | RuntimeException e) {
+   log.warn("Could not delete blob {}", key, e);
+  }
+ }
+
  public AttachmentCounts attachmentCounts(UUID draftId) {
   AttachmentRepository.Counts counts = attachments.counts(draftId);
   return new AttachmentCounts(counts.total(), counts.uploaded(), counts.failed());
@@ -82,6 +135,13 @@ public class DraftService {
   } catch (IOException e) {
    throw new UncheckedIOException("Cannot read image " + key, e);
   }
+ }
+
+ private static String mergeTexts(String first, String second) {
+  if (first == null) {
+   return second;
+  }
+  return second == null || Objects.equals(first, second) ? first : first + "\n" + second;
  }
 
  public record AttachmentCounts(int total, int uploaded, int failed) {

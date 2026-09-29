@@ -10,6 +10,8 @@ import com.aicopilot.draft.DraftService;
 import com.aicopilot.draft.DraftService.AttachmentCounts;
 import com.aicopilot.submission.SubmissionErrors.DraftAlreadySubmitted;
 import com.aicopilot.submission.SubmissionErrors.EmptyDraft;
+import com.aicopilot.submission.SubmissionErrors.RequestNotCancellable;
+import com.aicopilot.submission.SubmissionErrors.RequestNotRetryable;
 import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
@@ -96,6 +98,58 @@ public class SubmissionService {
    .filter(r -> r.state() == AiRequest.State.WAITING_FOR_ATTACHMENTS || r.state() == AiRequest.State.BLOCKED)
    .flatMap(r -> requests.lock(r.id()))
    .ifPresent(r -> reevaluate(r, drafts.get(event.draftId())));
+ }
+
+ /**
+  * Cancel Send (spec 26): possible while the request still waits for its images, i.e. before the question became
+  * a message. The request becomes CANCELLED and the draft editable again with its photos and text, so the user can
+  * fix the images and press Send again. Idempotent.
+  *
+  * <p>Lock order is the same as in submit (draft, then request), so a concurrent upload or Send cannot deadlock.
+  */
+ @Transactional
+ public AiRequest cancel(UUID userId, UUID requestId) {
+  AiRequest request = get(userId, requestId);
+  Draft draft = drafts.lock(userId, request.draftId());
+  AiRequest current = requests.lock(requestId).orElseThrow();
+  switch (current.state()) {
+   case CANCELLED -> {
+    return current;
+   }
+   case WAITING_FOR_ATTACHMENTS, BLOCKED -> {
+    requests.markCancelled(requestId, clock.instant());
+    drafts.reopen(draft);
+    log.info("Cancelled aiRequestId={} draftId={}", requestId, draft.id());
+    return requests.find(requestId).orElseThrow();
+   }
+   default -> throw new RequestNotCancellable();
+  }
+ }
+
+ /**
+  * Retry after a failed answer: the same question is queued again, no new message is created (spec 26, 37).
+  * Only for the latest question of the conversation, so the new answer lands right after its question.
+  * Idempotent: a request that is already queued, processing or completed is returned unchanged.
+  */
+ @Transactional
+ public AiRequest retry(UUID userId, UUID requestId) {
+  get(userId, requestId);
+  AiRequest current = requests.lock(requestId).orElseThrow();
+  switch (current.state()) {
+   case QUEUED, PROCESSING, COMPLETED -> {
+    return current;
+   }
+   case FAILED -> {
+    if (!conversations.isLastMessage(current.conversationId(), current.userMessageId())) {
+     throw new RequestNotRetryable("Newer messages exist; ask the question again instead");
+    }
+    requests.requeueFailed(requestId, clock.instant());
+    log.info("Retry aiRequestId={} after {}", requestId, current.lastErrorCode());
+    events.publishEvent(new RequestQueuedEvent(requestId));
+    return requests.find(requestId).orElseThrow();
+   }
+   default -> throw new RequestNotRetryable("The request did not fail");
+  }
  }
 
  @Transactional(readOnly = true)

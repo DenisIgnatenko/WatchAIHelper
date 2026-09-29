@@ -78,6 +78,12 @@ class MessageRepository {
    .query(mapper).optional();
  }
 
+ Optional<UUID> lastId(UUID conversationId) {
+  return jdbc.sql("select id from messages where conversation_id = :id order by seq desc limit 1")
+   .param("id", conversationId)
+   .query(UUID.class).optional();
+ }
+
  /** Next seq; the caller must hold the conversation row lock. */
  int nextSeq(UUID conversationId) {
   return jdbc.sql("select coalesce(max(seq), 0) + 1 from messages where conversation_id = :id")

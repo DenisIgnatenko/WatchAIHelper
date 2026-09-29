@@ -4,11 +4,11 @@ openapi: 3.0.3
 #  - Java server interfaces + DTOs (backend, openapi-generator-maven-plugin);
 #  - Swift client (apple, swift-openapi-generator) - Phase 2, client side.
 #
-# Scope of this version: Phase 3 (text + images). Draft text editing, cancel/retry and
-# conversation deletion are added in the phases that need them (YAGNI).
+# Scope of this version: Phase 5 (text + images, cancel/retry of a Send, renaming and deleting
+# conversations, AI cost report). Draft text editing is added when a client needs it (YAGNI).
 info:
  title: AI Copilot API
- version: 0.4.0
+ version: 0.5.0
  description: Private backend for the AI Copilot iPhone and Apple Watch apps.
 
 servers:
@@ -22,6 +22,7 @@ tags:
  - name: Conversations
  - name: Submissions
  - name: Drafts
+ - name: Usage
 
 paths:
  /v1/home:
@@ -70,6 +71,45 @@ paths:
      content:
       application/json:
        schema: { $ref: "#/components/schemas/Conversation" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+
+ /v1/conversations/{conversationId}:
+  patch:
+   tags: [Conversations]
+   operationId: renameConversation
+   summary: Rename a conversation. A title set by the user is never replaced by an AI-suggested one.
+   parameters:
+    - $ref: "#/components/parameters/ConversationId"
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema: { $ref: "#/components/schemas/RenameConversationRequest" }
+   responses:
+    "200":
+     description: Renamed.
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/Conversation" }
+    "400":
+     description: The title is empty or too long.
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+  delete:
+   tags: [Conversations]
+   operationId: deleteConversation
+   summary: Delete a conversation with its messages, drafts and stored images (spec 47).
+   description: >
+    Irreversible. Image bytes are deleted immediately. If it was the active conversation, the most recently
+    updated remaining one becomes active (or a new one is created on the next home call). The AI cost report
+    keeps the token counts, without any content. Idempotent: deleting a missing conversation returns 204.
+   parameters:
+    - $ref: "#/components/parameters/ConversationId"
+   responses:
+    "204": { description: Deleted (or did not exist). }
     "401": { $ref: "#/components/responses/Unauthorized" }
 
  /v1/active-conversation:
@@ -250,16 +290,61 @@ paths:
       application/problem+json:
        schema: { $ref: "#/components/schemas/Problem" }
 
+ /v1/requests/{requestId}/cancel:
+  post:
+   tags: [Submissions]
+   operationId: cancelRequest
+   summary: Cancel a Send that still waits for its images; the photos and text return to the draft.
+   description: >
+    Allowed while the request is waitingForAttachments or blocked (no message exists yet, spec 26).
+    Idempotent: cancelling a cancelled request returns it unchanged.
+   parameters:
+    - $ref: "#/components/parameters/RequestId"
+   responses:
+    "200":
+     description: Cancelled.
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/AiRequest" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+    "409":
+     description: Too late to cancel (the question was already sent to the AI). Code request_not_cancellable.
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+
+ /v1/requests/{requestId}/retry:
+  post:
+   tags: [Submissions]
+   operationId: retryRequest
+   summary: Ask the AI again after a failed answer. Reuses the same question; no new message is created.
+   description: >
+    Allowed for a failed request whose question is still the last message of its conversation.
+    Idempotent: retrying a request that is already queued, processing or completed returns it unchanged.
+   parameters:
+    - $ref: "#/components/parameters/RequestId"
+   responses:
+    "202":
+     description: Queued again.
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/AiRequest" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+    "404": { $ref: "#/components/responses/NotFound" }
+    "409":
+     description: Cannot be retried (cancelled, still waiting for images, or newer messages exist). Code request_not_retryable.
+     content:
+      application/problem+json:
+       schema: { $ref: "#/components/schemas/Problem" }
+
  /v1/requests/{requestId}:
   get:
    tags: [Submissions]
    operationId: getRequest
    summary: State of an AI request, optionally long-polling for a change.
    parameters:
-    - name: requestId
-      in: path
-      required: true
-      schema: { type: string, format: uuid }
+    - $ref: "#/components/parameters/RequestId"
     - name: waitSeconds
       in: query
       required: false
@@ -276,6 +361,22 @@ paths:
     "401": { $ref: "#/components/responses/Unauthorized" }
     "404": { $ref: "#/components/responses/NotFound" }
 
+ /v1/usage:
+  get:
+   tags: [Usage]
+   operationId: getUsage
+   summary: AI token usage and its estimated cost for today, this month and all time.
+   description: >
+    Cost is estimated from token counts with the prices configured on the backend (USD per 1M tokens).
+    "Today" and "this month" use the backend's reporting time zone.
+   responses:
+    "200":
+     description: Report.
+     content:
+      application/json:
+       schema: { $ref: "#/components/schemas/UsageReport" }
+    "401": { $ref: "#/components/responses/Unauthorized" }
+
 components:
  securitySchemes:
   deviceToken:
@@ -291,6 +392,11 @@ components:
    schema: { type: string, format: uuid }
   DraftId:
    name: draftId
+   in: path
+   required: true
+   schema: { type: string, format: uuid }
+  RequestId:
+   name: requestId
    in: path
    required: true
    schema: { type: string, format: uuid }
@@ -349,6 +455,12 @@ components:
      description: Client-generated id; makes the call idempotent.
     mode:
      $ref: "#/components/schemas/ConversationMode"
+
+  RenameConversationRequest:
+   type: object
+   required: [title]
+   properties:
+    title: { type: string, minLength: 1, maxLength: 80 }
 
   SetActiveConversationRequest:
    type: object
@@ -459,10 +571,14 @@ components:
 
   AiRequest:
    type: object
-   required: [id, conversationId, state]
+   required: [id, conversationId, state, createdAt]
    properties:
     id: { type: string, format: uuid }
     conversationId: { type: string, format: uuid }
+    createdAt:
+     type: string
+     format: date-time
+     description: When Send was pressed; clients show the elapsed time.
     state:
      type: string
      enum: [waitingForAttachments, blocked, queued, processing, completed, failed, cancelled]
@@ -483,6 +599,26 @@ components:
      type: string
      description: Set in failed; safe to show to the user.
 
+  UsageReport:
+   type: object
+   required: [currency, timeZone, today, month, total]
+   properties:
+    currency: { type: string, description: "ISO 4217, e.g. USD." }
+    timeZone: { type: string, description: "IANA zone that defines today and this month." }
+    today: { $ref: "#/components/schemas/UsagePeriod" }
+    month: { $ref: "#/components/schemas/UsagePeriod" }
+    total: { $ref: "#/components/schemas/UsagePeriod" }
+
+  UsagePeriod:
+   type: object
+   required: [answers, inputTokens, cachedInputTokens, outputTokens, cost]
+   properties:
+    answers: { type: integer, description: "Number of AI answers." }
+    inputTokens: { type: integer, format: int64, description: "All input tokens, cached ones included." }
+    cachedInputTokens: { type: integer, format: int64 }
+    outputTokens: { type: integer, format: int64 }
+    cost: { type: number, format: double, description: "Estimated cost in the report currency." }
+
   Problem:
    type: object
    description: RFC 9457 problem details.
@@ -493,4 +629,6 @@ components:
     detail: { type: string }
     code:
      type: string
-     description: Stable machine-readable code, e.g. draft_already_submitted, empty_draft.
+     description: >
+      Stable machine-readable code, e.g. draft_already_submitted, empty_draft, request_not_cancellable,
+      request_not_retryable, invalid_title.

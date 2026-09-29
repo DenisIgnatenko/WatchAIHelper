@@ -54,13 +54,34 @@ class DraftRepository {
    .query(MAPPER).optional();
  }
 
+ /** Row locks on every draft of a conversation (any state), before the conversation is deleted. */
+ void lockAllOfConversation(UUID conversationId) {
+  jdbc.sql("select id from drafts where conversation_id = :id for update").param("id", conversationId)
+   .query(UUID.class).list();
+ }
+
+ /** Text given with Send replaces the draft text; without it, the text kept from a cancelled Send stays. */
  void freeze(UUID draftId, String text, Instant now) {
   jdbc.sql("""
-    update drafts set state = 'FROZEN', text = :text, version = version + 1, updated_at = :now
+    update drafts set state = 'FROZEN', text = coalesce(:text, text), version = version + 1, updated_at = :now
     where id = :id and state = 'OPEN'
     """)
    .param("id", draftId).param("text", text).param("now", ts(now))
    .update();
+ }
+
+ /** Cancelled Send: the frozen draft becomes editable again. */
+ void reopen(UUID draftId, String text, Instant now) {
+  jdbc.sql("""
+    update drafts set state = 'OPEN', text = :text, version = version + 1, updated_at = :now
+    where id = :id and state = 'FROZEN'
+    """)
+   .param("id", draftId).param("text", text).param("now", ts(now))
+   .update();
+ }
+
+ void delete(UUID draftId) {
+  jdbc.sql("delete from drafts where id = :id").param("id", draftId).update();
  }
 
  void consume(UUID draftId, Instant now) {

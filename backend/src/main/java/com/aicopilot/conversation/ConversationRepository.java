@@ -64,11 +64,41 @@ class ConversationRepository {
    .param("id", id).param("now", ts(now)).update();
  }
 
- /** Replaces the default title only, never a title that was already set. */
+ /** Replaces the initial default title only (first question), never a title that was already set. */
  void renameIfDefault(UUID id, String title) {
-  jdbc.sql("update conversations set title = :title where id = :id and title = :default")
+  jdbc.sql("""
+    update conversations set title = :title
+    where id = :id and title = :default and title_source = 'PLACEHOLDER'
+    """)
    .param("id", id).param("title", title).param("default", Conversation.DEFAULT_TITLE)
    .update();
+ }
+
+ /** An AI-suggested title replaces a placeholder only: once set by the AI or the user, it stays. */
+ void applyAiTitle(UUID id, String title) {
+  jdbc.sql("update conversations set title = :title, title_source = 'AI' where id = :id and title_source = 'PLACEHOLDER'")
+   .param("id", id).param("title", title)
+   .update();
+ }
+
+ /** @return false when the conversation does not exist or belongs to another user */
+ boolean renameByUser(UUID userId, UUID id, String title) {
+  return jdbc.sql("update conversations set title = :title, title_source = 'USER' where id = :id and user_id = :userId")
+   .param("id", id).param("userId", userId).param("title", title)
+   .update() == 1;
+ }
+
+ /** Cascades to drafts, attachments, messages and AI requests (foreign keys). */
+ void delete(UUID userId, UUID id) {
+  jdbc.sql("delete from conversations where id = :id and user_id = :userId")
+   .param("id", id).param("userId", userId)
+   .update();
+ }
+
+ Optional<UUID> mostRecentlyUpdated(UUID userId) {
+  return jdbc.sql("select id from conversations where user_id = :userId order by updated_at desc limit 1")
+   .param("userId", userId)
+   .query(UUID.class).optional();
  }
 
  Optional<UUID> activeConversationId(UUID userId) {

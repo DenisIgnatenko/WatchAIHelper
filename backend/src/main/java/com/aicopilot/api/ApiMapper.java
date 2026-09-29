@@ -10,6 +10,8 @@ import com.aicopilot.api.generated.model.DraftSummaryDto;
 import com.aicopilot.api.generated.model.HomeSnapshotDto;
 import com.aicopilot.api.generated.model.MessageDto;
 import com.aicopilot.api.generated.model.SuggestedActionDto;
+import com.aicopilot.api.generated.model.UsagePeriodDto;
+import com.aicopilot.api.generated.model.UsageReportDto;
 import com.aicopilot.conversation.Conversation;
 import com.aicopilot.conversation.Message;
 import com.aicopilot.draft.Attachment;
@@ -19,6 +21,8 @@ import com.aicopilot.draft.DraftService;
 import com.aicopilot.draft.DraftService.AttachmentCounts;
 import com.aicopilot.home.HomeService.HomeSnapshot;
 import com.aicopilot.submission.AiRequest;
+import com.aicopilot.usage.UsageService.Period;
+import com.aicopilot.usage.UsageService.UsageReport;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -82,7 +86,7 @@ class ApiMapper {
  }
 
  AiRequestDto request(AiRequest r) {
-  var dto = new AiRequestDto(r.id(), r.conversationId(), state(r.state()));
+  var dto = new AiRequestDto(r.id(), r.conversationId(), time(r.createdAt()), state(r.state()));
   switch (r.state()) {
    case WAITING_FOR_ATTACHMENTS -> {
     AttachmentCounts counts = drafts.attachmentCounts(r.draftId());
@@ -95,6 +99,15 @@ class ApiMapper {
    }
   }
   return dto;
+ }
+
+ UsageReportDto usage(UsageReport report) {
+  return new UsageReportDto(report.currency(), report.timeZone(), period(report.today()), period(report.month()),
+   period(report.total()));
+ }
+
+ private static UsagePeriodDto period(Period p) {
+  return new UsagePeriodDto(p.answers(), p.inputTokens(), p.cachedInputTokens(), p.outputTokens(), p.cost().doubleValue());
  }
 
  private static AiRequestDto.StateEnum state(AiRequest.State state) {

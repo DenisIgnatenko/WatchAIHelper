@@ -39,14 +39,26 @@ public interface AiEngine {
  record Image(String mimeType, byte[] bytes) {
  }
 
- /** A validated answer: plain text plus at most three follow-ups (spec 16, 51). */
- record AiReply(String text, List<Suggestion> suggestions, String model, Usage usage) {
+ /**
+  * A validated answer: plain text plus at most three follow-ups (spec 16, 51).
+  *
+  * @param title short topic of the conversation suggested by the model; null if none. The backend uses it only
+  *              while the conversation still has a placeholder title.
+  */
+ record AiReply(String text, List<Suggestion> suggestions, String title, String model, Usage usage) {
  }
 
  record Suggestion(String title, String prompt) {
  }
 
- /** Token usage for logging/cost tracking (spec 33); null fields when the provider did not report them. */
- record Usage(Long inputTokens, Long outputTokens) {
+ /**
+  * Token usage for logging and the cost report (spec 33); null fields when the provider did not report them.
+  *
+  * @param inputTokens       all input tokens, including the cached and cache-write parts
+  * @param cachedInputTokens read from the prompt cache (billed at a lower price)
+  * @param cacheWriteTokens  written to the prompt cache (billed at a higher price)
+  * @param outputTokens      including reasoning tokens
+  */
+ record Usage(Long inputTokens, Long cachedInputTokens, Long cacheWriteTokens, Long outputTokens) {
  }
 }

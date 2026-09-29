@@ -35,6 +35,16 @@ class SubmissionsController implements SubmissionsApi {
   return ResponseEntity.status(HttpStatus.ACCEPTED).body(mapper.request(request));
  }
 
+ @Override
+ public ResponseEntity<AiRequestDto> cancelRequest(UUID requestId) {
+  return ResponseEntity.ok(mapper.request(submissions.cancel(currentUser.id(), requestId)));
+ }
+
+ @Override
+ public ResponseEntity<AiRequestDto> retryRequest(UUID requestId) {
+  return ResponseEntity.status(HttpStatus.ACCEPTED).body(mapper.request(submissions.retry(currentUser.id(), requestId)));
+ }
+
  /**
   * Long-poll: waits until the state changes or the time is up. Sleeping is cheap here because every
   * request runs on a virtual thread (application.yml: spring.threads.virtual.enabled).

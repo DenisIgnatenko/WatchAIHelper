@@ -75,8 +75,14 @@ class OpenAiEngine implements AiEngine {
     .findFirst()
     .orElseThrow(() -> AiEngineException.permanent("empty_output", "The model returned no text output", null));
    Usage usage = response.usage()
-    .map(u -> new Usage(u.inputTokens(), u.outputTokens()))
-    .orElse(new Usage(null, null));
+    .map(u -> {
+     // Cache details are optional in practice: missing fields count as 0 instead of failing the answer.
+     var details = u._inputTokensDetails().asKnown();
+     long cached = details.flatMap(d -> d._cachedTokens().asKnown()).orElse(0L);
+     long cacheWrite = details.flatMap(d -> d._cacheWriteTokens().asKnown()).orElse(0L);
+     return new Usage(u.inputTokens(), cached, cacheWrite, u.outputTokens());
+    })
+    .orElse(new Usage(null, null, null, null));
    return validate(reply, usage);
   } catch (RateLimitException e) {
    throw AiEngineException.transientFailure("rate_limited", "OpenAI rate limit", e);
@@ -123,9 +129,10 @@ class OpenAiEngine implements AiEngine {
    .limit(MAX_SUGGESTIONS)
    .map(a -> new Suggestion(a.title.strip(), a.prompt.strip()))
    .toList();
-  log.info("OpenAI answer model={} inputTokens={} outputTokens={}", settings.model(), usage.inputTokens(),
-   usage.outputTokens());
-  return new AiReply(reply.text.strip(), suggestions, settings.model(), usage);
+  String title = reply.title == null || reply.title.isBlank() ? null : reply.title.strip();
+  log.info("OpenAI answer model={} inputTokens={} cachedInputTokens={} outputTokens={}", settings.model(),
+   usage.inputTokens(), usage.cachedInputTokens(), usage.outputTokens());
+  return new AiReply(reply.text.strip(), suggestions, title, settings.model(), usage);
  }
 
  /**
@@ -139,6 +146,10 @@ class OpenAiEngine implements AiEngine {
 
   @JsonPropertyDescription("0 to 3 useful follow-up actions.")
   public List<SuggestedActionFormat> suggestedActions;
+
+  @JsonPropertyDescription("A short title for the whole conversation so far, 2-5 words, naming its topic "
+   + "(e.g. the exercise or text being worked on). In the language of the conversation. No quotes, no emoji.")
+  public String title;
  }
 
  public static class SuggestedActionFormat {

@@ -14,7 +14,7 @@ class ConversationModeIT extends ApiTestBase {
 
  @Test
  void danishExamConversationGetsGuideAndMaterials() throws Exception {
-  JsonNode conversation = create("danishExam");
+  JsonNode conversation = createConversation("danishExam");
   assertThat(conversation.at("/mode").asString()).isEqualTo("danishExam");
 
   awaitTerminal(submit(home().at("/draft/id").asString(), "Hvor mange ord skal jeg skrive?", UUID.randomUUID(), 202)
@@ -28,7 +28,7 @@ class ConversationModeIT extends ApiTestBase {
 
  @Test
  void generalConversationHasNoExamMaterials() throws Exception {
-  JsonNode conversation = create("general");
+  JsonNode conversation = createConversation("general");
   assertThat(conversation.at("/mode").asString()).isEqualTo("general");
 
   awaitTerminal(submit(home().at("/draft/id").asString(), "why kafka?", UUID.randomUUID(), 202).at("/id").asString());
@@ -43,13 +43,5 @@ class ConversationModeIT extends ApiTestBase {
     .content(json.writeValueAsString(Map.of("id", UUID.randomUUID().toString()))))
    .andReturn();
   assertThat(body(result, 201).at("/mode").asString()).isEqualTo("general");
- }
-
- private JsonNode create(String mode) throws Exception {
-  var result = mvc.perform(authorized(post("/v1/conversations"))
-    .contentType(MediaType.APPLICATION_JSON)
-    .content(json.writeValueAsString(Map.of("id", UUID.randomUUID().toString(), "mode", mode))))
-   .andReturn();
-  return body(result, 201);
  }
 }

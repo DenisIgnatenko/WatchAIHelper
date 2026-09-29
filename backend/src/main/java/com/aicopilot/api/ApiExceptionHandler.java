@@ -1,9 +1,12 @@
 package com.aicopilot.api;
 
 import com.aicopilot.common.NotFoundException;
+import com.aicopilot.conversation.ConversationService.InvalidTitle;
 import com.aicopilot.draft.DraftErrors;
 import com.aicopilot.submission.SubmissionErrors.DraftAlreadySubmitted;
 import com.aicopilot.submission.SubmissionErrors.EmptyDraft;
+import com.aicopilot.submission.SubmissionErrors.RequestNotCancellable;
+import com.aicopilot.submission.SubmissionErrors.RequestNotRetryable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -44,6 +47,21 @@ class ApiExceptionHandler {
  @ExceptionHandler(DraftErrors.ContentMismatch.class)
  ProblemDetail contentMismatch(DraftErrors.ContentMismatch e) {
   return problem(HttpStatus.UNPROCESSABLE_CONTENT, "content_mismatch", e.getMessage());
+ }
+
+ @ExceptionHandler(RequestNotCancellable.class)
+ ProblemDetail notCancellable(RequestNotCancellable e) {
+  return problem(HttpStatus.CONFLICT, "request_not_cancellable", e.getMessage());
+ }
+
+ @ExceptionHandler(RequestNotRetryable.class)
+ ProblemDetail notRetryable(RequestNotRetryable e) {
+  return problem(HttpStatus.CONFLICT, "request_not_retryable", e.getMessage());
+ }
+
+ @ExceptionHandler(InvalidTitle.class)
+ ProblemDetail invalidTitle(InvalidTitle e) {
+  return problem(HttpStatus.BAD_REQUEST, "invalid_title", e.getMessage());
  }
 
  private static ProblemDetail problem(HttpStatus status, String code, String detail) {

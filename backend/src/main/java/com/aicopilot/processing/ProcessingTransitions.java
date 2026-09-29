@@ -7,6 +7,7 @@ import com.aicopilot.conversation.ConversationService;
 import com.aicopilot.conversation.Message.SuggestedAction;
 import com.aicopilot.submission.AiRequest;
 import com.aicopilot.submission.AiRequestRepository;
+import com.aicopilot.usage.UsageService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -30,14 +31,16 @@ class ProcessingTransitions {
 
  private final AiRequestRepository requests;
  private final ConversationService conversations;
+ private final UsageService usage;
  private final CopilotProperties.Processing settings;
  private final ObjectMapper json;
  private final Clock clock;
 
- ProcessingTransitions(AiRequestRepository requests, ConversationService conversations,
+ ProcessingTransitions(AiRequestRepository requests, ConversationService conversations, UsageService usage,
   CopilotProperties properties, ObjectMapper json, Clock clock) {
   this.requests = requests;
   this.conversations = conversations;
+  this.usage = usage;
   this.settings = properties.processing();
   this.json = json;
   this.clock = clock;
@@ -53,17 +56,24 @@ class ProcessingTransitions {
  /**
   * PROCESSING -> COMPLETED together with the assistant message. If the lease expired and another attempt
   * already finished the request, this attempt's answer is dropped: one assistant message per request.
+  * The answer is dropped too when the conversation was deleted while the AI was thinking.
   */
  @Transactional
  public boolean complete(AiRequest request, AiReply reply) {
-  AiRequest current = requests.lock(request.id()).orElseThrow();
-  if (current.state() != AiRequest.State.PROCESSING || current.attemptCount() != request.attemptCount()) {
-   log.warn("Dropping stale answer aiRequestId={} state={}", request.id(), current.state());
+  var current = requests.lock(request.id());
+  if (current.isEmpty()) {
+   log.info("Dropping answer of deleted conversation aiRequestId={}", request.id());
+   return false;
+  }
+  if (current.get().state() != AiRequest.State.PROCESSING || current.get().attemptCount() != request.attemptCount()) {
+   log.warn("Dropping stale answer aiRequestId={} state={}", request.id(), current.get().state());
    return false;
   }
   var actions = reply.suggestions().stream().map(s -> new SuggestedAction(s.title(), s.prompt())).toList();
   var messageId = conversations.appendAssistantMessage(request.userId(), request.conversationId(), request.id(),
    reply.text(), actions, request.responseMode().name(), reply.model(), usageJson(reply));
+  conversations.suggestTitle(request.conversationId(), reply.title());
+  usage.record(request.userId(), request.id(), reply.model(), reply.usage());
   requests.complete(request.id(), messageId, clock.instant());
   return true;
  }
@@ -87,9 +97,11 @@ class ProcessingTransitions {
   if (reply.usage() == null) {
    return null;
   }
-  Map<String, Object> usage = new LinkedHashMap<>();
-  usage.put("inputTokens", reply.usage().inputTokens());
-  usage.put("outputTokens", reply.usage().outputTokens());
-  return json.writeValueAsString(usage);
+  Map<String, Object> tokens = new LinkedHashMap<>();
+  tokens.put("inputTokens", reply.usage().inputTokens());
+  tokens.put("cachedInputTokens", reply.usage().cachedInputTokens());
+  tokens.put("cacheWriteTokens", reply.usage().cacheWriteTokens());
+  tokens.put("outputTokens", reply.usage().outputTokens());
+  return json.writeValueAsString(tokens);
  }
 }

@@ -81,6 +81,48 @@ class AttachmentRepository {
    .update();
  }
 
+ /**
+  * Moves all images of one draft to the end of another, keeping their order. The new positions start after the
+  * target's last one, so {@code unique (draft_id, position)} cannot collide.
+  */
+ void moveAll(UUID fromDraftId, UUID toDraftId) {
+  jdbc.sql("""
+    update attachments
+    set draft_id = :to,
+        position = position + (select coalesce(max(position), 0) from attachments where draft_id = :to)
+    where draft_id = :from
+    """)
+   .param("from", fromDraftId).param("to", toDraftId)
+   .update();
+ }
+
+ /** Ids of all images of a conversation (any draft state). */
+ List<UUID> idsByConversation(UUID conversationId) {
+  return jdbc.sql("""
+    select a.id from attachments a join drafts d on d.id = a.draft_id where d.conversation_id = :id
+    """)
+   .param("id", conversationId)
+   .query(UUID.class).list();
+ }
+
+ /** Uploaded images older than the retention period whose bytes are still stored. */
+ List<Attachment> expired(Instant uploadedBefore, int limit) {
+  return jdbc.sql("""
+    select * from attachments
+    where state = 'UPLOADED' and blob_key is not null and uploaded_at < :before
+    order by uploaded_at limit :limit
+    """)
+   .param("before", ts(uploadedBefore)).param("limit", limit)
+   .query(MAPPER).list();
+ }
+
+ /** The bytes are gone; the row stays, so the history still shows "📷 3" and the AI gets a note instead. */
+ void markPurged(UUID id, Instant now) {
+  jdbc.sql("update attachments set blob_key = null, purged_at = :now where id = :id")
+   .param("id", id).param("now", ts(now))
+   .update();
+ }
+
  void delete(UUID id) {
   jdbc.sql("delete from attachments where id = :id").param("id", id).update();
  }

@@ -54,6 +54,18 @@ copilot:
   context-images: 12
  attachments:
   upload-timeout: ${ATTACHMENT_UPLOAD_TIMEOUT_MINUTES:10}m
+  # Image bytes are deleted this long after upload (spec 47). Messages stay, shown as "📷 3".
+  retention: ${IMAGE_RETENTION_DAYS:30}d
+ usage:
+  # Cost report: USD per 1M tokens of the configured model (OpenAI price list, standard tier, gpt-6-sol).
+  # Update together with OPENAI_MODEL. Reasoning tokens are billed as output.
+  currency: USD
+  input-price: ${OPENAI_PRICE_INPUT_PER_1M:2.00}
+  cached-input-price: ${OPENAI_PRICE_CACHED_INPUT_PER_1M:0.20}
+  cache-write-price: ${OPENAI_PRICE_CACHE_WRITE_PER_1M:2.50}
+  output-price: ${OPENAI_PRICE_OUTPUT_PER_1M:10.00}
+  # Defines "today" and "this month" in the report.
+  time-zone: ${USAGE_TIME_ZONE:Europe/Copenhagen}
  storage:
   # Image bytes (BlobStorage). In Docker: a volume mounted at /data/blobs.
   path: ${STORAGE_PATH:./data/blobs}
