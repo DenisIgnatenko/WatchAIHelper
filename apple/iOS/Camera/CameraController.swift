@@ -166,19 +166,11 @@ final class CameraController: NSObject, AVCapturePhotoCaptureDelegate, AVCapture
   frameOutput.alwaysDiscardsLateVideoFrames = true
   frameOutput.setSampleBufferDelegate(self, queue: frameQueue)
   if session.canAddOutput(frameOutput) { session.addOutput(frameOutput) }
-  try configureForDocuments(camera)
- }
-
- /// Settings that help text recognition of paper pages.
- private func configureForDocuments(_ camera: AVCaptureDevice) throws {
-  try camera.lockForConfiguration()
-  defer { camera.unlockForConfiguration() }
-  // Pages are close: restricting autofocus to near distances makes it faster and less likely to hunt.
-  if camera.isAutoFocusRangeRestrictionSupported { camera.autoFocusRangeRestriction = .near }
-  if camera.isFocusModeSupported(.continuousAutoFocus) { camera.focusMode = .continuousAutoFocus }
-  if camera.isExposureModeSupported(.continuousAutoExposure) { camera.exposureMode = .continuousAutoExposure }
-  // Refocus when the phone moves to the next page.
-  camera.isSubjectAreaChangeMonitoringEnabled = true
+  // Deliberately no device configuration (lockForConfiguration): the camera keeps its defaults (continuous
+  // autofocus and exposure). The system-wide camera hangs (Apple's Camera app black too, cured only by a reboot)
+  // began when the ultra-wide lens came together with "document" focus tuning (autofocus range restricted to
+  // near, subject-area monitoring). The tuning is the first suspect and was removed (2026-09-29); if hangs
+  // continue, the ultra-wide lens itself is next (fall back to .builtInWideAngleCamera).
  }
 
  // MARK: - Frames (watchdog only)
