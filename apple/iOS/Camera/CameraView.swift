@@ -8,13 +8,18 @@ import UIKit
 struct CameraView: View {
  @Environment(DraftStore.self) private var store
  @Environment(\.dismiss) private var dismiss
- @State private var camera = CameraController()
+ /// One camera session for the whole app (see CameraController: two sessions competing for the camera
+ /// caused the black viewfinder).
+ private let camera = CameraController.shared
  /// The photo waiting for the user's confirmation.
  @State private var captured: Data?
  @State private var capturing = false
  @State private var errorText: String?
  /// Pages confirmed in this camera session (counter on the Done button).
  @State private var confirmedCount = 0
+ /// The camera delivered no picture even after automatic rebuilds: offer a manual restart.
+ @State private var stalled = false
+ @State private var stalledSince: Date?
  @Environment(\.scenePhase) private var scenePhase
 
  var body: some View {
@@ -23,10 +28,19 @@ struct CameraView: View {
    if let captured, let image = UIImage(data: captured) {
     Image(uiImage: image).resizable().scaledToFit()
    } else {
-    CameraPreview(session: camera.session).ignoresSafeArea()
+    // The whole 4:3 sensor frame, like Apple's Camera: what the viewfinder shows is exactly what the photo
+    // contains. (Filling the tall screen cropped ~40% of the width, so the photo looked "further away".)
+    CameraPreview(session: camera.session)
    }
    VStack {
     Spacer()
+    if stalled {
+     Button("Restart camera", systemImage: "arrow.clockwise") {
+      stalled = false
+      camera.rebuild()
+     }
+     .buttonStyle(.borderedProminent)
+    }
     if let errorText {
      Text(errorText).foregroundStyle(.white).padding(8).background(.red.opacity(0.8), in: .capsule)
     }
@@ -42,6 +56,19 @@ struct CameraView: View {
     errorText = nil
    } catch {
     errorText = "Camera unavailable. Allow camera access in Settings."
+    return
+   }
+   // The controller rebuilds a silent session by itself (about 2 s per attempt); if the picture is still
+   // missing after that, show the manual restart. Checked while this screen is visible.
+   stalled = false
+   while !Task.isCancelled {
+    try? await Task.sleep(for: .seconds(1))
+    if camera.isDeliveringFrames {
+     stalledSince = nil
+    } else if stalledSince == nil {
+     stalledSince = Date()
+    }
+    stalled = captured == nil && stalledSince.map { Date().timeIntervalSince($0) > 7 } == true
    }
   }
   .onDisappear { camera.stop() }
@@ -113,7 +140,7 @@ private struct CameraPreview: UIViewRepresentable {
  func makeUIView(context: Context) -> PreviewView {
   let view = PreviewView()
   view.previewLayer.session = session
-  view.previewLayer.videoGravity = .resizeAspectFill
+  view.previewLayer.videoGravity = .resizeAspect
   return view
  }
 
