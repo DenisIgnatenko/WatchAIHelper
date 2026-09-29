@@ -274,10 +274,10 @@ Mapping to spec 36: `waitingForAttachments` = WAITING/BLOCKED, `submitted` = QUE
 
 ## 12. Camera workflow (iOS)
 
-**Changed 2026-09-29:** pages are captured with Apple's document scanner (VisionKit), not a custom AVFoundation
-camera: the custom camera triggered system-wide camera hangs on the owner's iPhone (PI 4.4). The scanner detects the
-sheet, corrects perspective and crops; Save adds all scanned pages to the draft in order (background upload,
-no inference - Invariant 2). The original design below is kept for reference.
+**Changed 2026-09-29: the app has no camera.** The owner's iPhone kept hanging its camera system-wide on iOS 27.0
+(custom AVFoundation camera, then Apple's document scanner; crash reports point at the iOS media stack, PI 4.4).
+Pages are photographed with Apple's Camera app and added from the library; the Action Button opens the photo picker.
+The original design below is kept for reference, in case the camera returns after an iOS update.
 
 ```
 Camera screen (full screen, opens directly)

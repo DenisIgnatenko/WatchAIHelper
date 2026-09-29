@@ -67,7 +67,6 @@ targets:
     ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     INFOPLIST_KEY_UILaunchScreen_Generation: YES
     INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-    INFOPLIST_KEY_NSCameraUsageDescription: AI Copilot photographs pages and documents to answer questions about them.
 
  AICopilotWatch:
   type: application

@@ -3,10 +3,14 @@ import PhotosUI
 import SwiftUI
 
 /// iPhone main screen = the current draft of the active conversation (spec 23):
-/// photos with upload state, [Camera], optional question, [Send], request status and the latest answer.
+/// photos with upload state, [Add photos], optional question, [Send], request status and the latest answer.
+///
+/// No in-app camera (decision 2026-09-29): the iPhone's media stack kept hanging on iOS 27.0 (docs PI 4.4), so the
+/// app never touches the camera. Pages are photographed with Apple's Camera app and added from the library.
 struct DraftView: View {
  @Environment(DraftStore.self) private var store
- @Binding var showCamera: Bool
+ /// Opens the photo picker; also set by the Action Button ("Ask with Camera" intent / aicopilot://camera).
+ @Binding var showPicker: Bool
  /// Items chosen in the system photo picker; converted into draft images, then cleared.
  @State private var pickedItems: [PhotosPickerItem] = []
 
@@ -35,21 +39,18 @@ struct DraftView: View {
       }
      }
 
-     HStack {
-      Button {
-       showCamera = true
-      } label: {
-       Label(store.tiles.isEmpty ? "Scan pages" : "Scan more", systemImage: "doc.viewfinder")
-        .frame(maxWidth: .infinity)
-      }
-      // Photo Library (spec 21): several images at once, numbered in the order you tap them
-      // (`.ordered`), which becomes the page order. Picking never starts AI inference.
-      PhotosPicker(selection: $pickedItems, maxSelectionCount: 10, selectionBehavior: .ordered, matching: .images) {
-       Label("Photos", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
-      }
+     Button {
+      showPicker = true
+     } label: {
+      Label(store.tiles.isEmpty ? "Add photos" : "Add more photos", systemImage: "photo.on.rectangle")
+       .frame(maxWidth: .infinity)
      }
      .buttonStyle(.bordered)
      .controlSize(.large)
+     // Photo Library (spec 21): several images at once, numbered in the order you tap them
+     // (`.ordered`), which becomes the page order. Picking never starts AI inference.
+     .photosPicker(isPresented: $showPicker, selection: $pickedItems, maxSelectionCount: 10,
+      selectionBehavior: .ordered, matching: .images)
      .onChange(of: pickedItems) { _, items in
       guard !items.isEmpty else { return }
       Task { await addPicked(items) }

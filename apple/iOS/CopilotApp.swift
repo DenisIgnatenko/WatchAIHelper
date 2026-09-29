@@ -11,27 +11,25 @@ struct CopilotApp: App {
  /// Bridge to the UIKit app delegate: needed for background upload events (see AppDelegate).
  @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
  @State private var store: DraftStore? = CopilotApp.makeStore()
- @State private var showCamera = false
+ /// The photo picker of the draft screen (the app has no camera of its own, see DraftView).
+ @State private var showPicker = false
  @Environment(\.scenePhase) private var scenePhase
 
  var body: some Scene {
   WindowGroup {
    if let store {
-    DraftView(showCamera: $showCamera)
+    DraftView(showPicker: $showPicker)
      .environment(store)
-     .fullScreenCover(isPresented: $showCamera) {
-      // Apple's document scanner (see DocumentScannerView for why not our own camera).
-      DocumentScannerView().environment(store).ignoresSafeArea()
-     }
      .task { await store.refresh() }
-     // aicopilot://camera - from a Shortcuts "Open URLs" action on the Action Button.
+     // aicopilot://camera - from a Shortcuts "Open URLs" action on the Action Button. The name is kept so existing
+     // shortcuts keep working; it now opens the photo picker.
      .onOpenURL { url in
-      if url.scheme == "aicopilot", url.host == "camera" { showCamera = true }
+      if url.scheme == "aicopilot", url.host == "camera" { showPicker = true }
      }
      .onChange(of: scenePhase) { _, phase in
       guard phase == .active else { return }
       // "Ask with Camera" (Action Button / Control / Siri) asked for the camera.
-      if PendingRoute.take() == .camera { showCamera = true }
+      if PendingRoute.take() == .camera { showPicker = true }
       Task { await store.refresh() }
      }
    } else {

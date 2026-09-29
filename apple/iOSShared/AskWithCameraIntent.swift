@@ -1,7 +1,8 @@
 import AppIntents
 import Foundation
 
-/// "Ask with Camera" (spec 19): opens the app directly on the camera.
+/// "Ask with Camera" (spec 19): opens the app directly on the photo picker. The app has no camera of its own since
+/// 2026-09-29 (docs PI 4.4); the name and identifiers stay, so the Action Button setup keeps working.
 ///
 /// An `OpenIntent` (not a plain `AppIntent` with `openAppWhenRun`): Apple's documentation requires
 /// `OpenIntent` for a Control that must open its app ("Creating controls to perform actions across the system").
@@ -13,7 +14,7 @@ import Foundation
 /// Apple requires the intent's target membership in both to open the app.
 struct AskWithCameraIntent: OpenIntent {
  static let title: LocalizedStringResource = "Ask with Camera"
- static let description = IntentDescription("Opens the AI Copilot camera to photograph pages.")
+ static let description = IntentDescription("Opens AI Copilot to add photos of pages.")
 
  /// iOS 26+: explicitly bring the app to the foreground BEFORE `perform()` runs.
  /// Belt and braces next to `OpenIntent`, after the Control did not open the app on the device.
