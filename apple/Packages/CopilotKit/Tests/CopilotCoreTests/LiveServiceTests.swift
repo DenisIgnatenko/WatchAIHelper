@@ -17,16 +17,34 @@ struct DateTranscoderTests {
 struct DTOMappingTests {
 
  @Test func flatRequestBecomesDomainEnum() throws {
+  let sentAt = Date(timeIntervalSince1970: 1_790_000_000)
   let dto = Components.Schemas.AiRequest(
-   id: UUID().uuidString, conversationId: UUID().uuidString, state: .waitingForAttachments,
+   id: UUID().uuidString, conversationId: UUID().uuidString, createdAt: sentAt, state: .waitingForAttachments,
    uploadedAttachments: 2, totalAttachments: 3
   )
-  #expect(try DTOMapping.request(dto).state == .waitingForAttachments(uploaded: 2, total: 3))
+  let request = try DTOMapping.request(dto)
+  #expect(request.state == .waitingForAttachments(uploaded: 2, total: 3))
+  #expect(request.createdAt == sentAt)
+  #expect(request.isCancellable)
+  #expect(!request.isRetryable)
  }
 
  @Test func invalidUUIDIsRejected() {
-  let dto = Components.Schemas.AiRequest(id: "not-a-uuid", conversationId: UUID().uuidString, state: .queued)
+  let dto = Components.Schemas.AiRequest(id: "not-a-uuid", conversationId: UUID().uuidString, createdAt: Date(), state: .queued)
   #expect(throws: DTOMapping.InvalidPayload.self) { try DTOMapping.request(dto) }
+ }
+
+ @Test func usageReportKeepsPeriodsApart() {
+  let period = { (answers: Int, cost: Double) in
+   Components.Schemas.UsagePeriod(answers: answers, inputTokens: 1000, cachedInputTokens: 250, outputTokens: 50, cost: cost)
+  }
+  let report = DTOMapping.usage(Components.Schemas.UsageReport(
+   currency: "USD", timeZone: "Europe/Copenhagen", today: period(1, 0.01), month: period(5, 0.05), total: period(9, 0.09)
+  ))
+  #expect(report.today.answers == 1)
+  #expect(report.month.cost == 0.05)
+  #expect(report.total.answers == 9)
+  #expect(report.today.cacheHitRate == 0.25)
  }
 }
 

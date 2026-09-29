@@ -115,6 +115,21 @@ extension Components {
                 case mode
             }
         }
+        /// - Remark: Generated from `#/components/schemas/RenameConversationRequest`.
+        public struct RenameConversationRequest: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RenameConversationRequest/title`.
+            public var title: Swift.String
+            /// Creates a new `RenameConversationRequest`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            public init(title: Swift.String) {
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/SetActiveConversationRequest`.
         public struct SetActiveConversationRequest: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/SetActiveConversationRequest/conversationId`.
@@ -452,6 +467,10 @@ extension Components {
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/AiRequest/conversationId`.
             public var conversationId: Swift.String
+            /// When Send was pressed; clients show the elapsed time.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AiRequest/createdAt`.
+            public var createdAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/AiRequest/state`.
             @frozen public enum StatePayload: String, Codable, Hashable, Sendable, CaseIterable {
                 case waitingForAttachments = "waitingForAttachments"
@@ -489,6 +508,7 @@ extension Components {
             /// - Parameters:
             ///   - id:
             ///   - conversationId:
+            ///   - createdAt: When Send was pressed; clients show the elapsed time.
             ///   - state:
             ///   - uploadedAttachments: Set in waitingForAttachments.
             ///   - totalAttachments: Set in waitingForAttachments.
@@ -498,6 +518,7 @@ extension Components {
             public init(
                 id: Swift.String,
                 conversationId: Swift.String,
+                createdAt: Foundation.Date,
                 state: Components.Schemas.AiRequest.StatePayload,
                 uploadedAttachments: Swift.Int? = nil,
                 totalAttachments: Swift.Int? = nil,
@@ -507,6 +528,7 @@ extension Components {
             ) {
                 self.id = id
                 self.conversationId = conversationId
+                self.createdAt = createdAt
                 self.state = state
                 self.uploadedAttachments = uploadedAttachments
                 self.totalAttachments = totalAttachments
@@ -517,12 +539,105 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case id
                 case conversationId
+                case createdAt
                 case state
                 case uploadedAttachments
                 case totalAttachments
                 case failedAttachments
                 case assistantMessageId
                 case failureReason
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UsageReport`.
+        public struct UsageReport: Codable, Hashable, Sendable {
+            /// ISO 4217, e.g. USD.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UsageReport/currency`.
+            public var currency: Swift.String
+            /// IANA zone that defines today and this month.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UsageReport/timeZone`.
+            public var timeZone: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageReport/today`.
+            public var today: Components.Schemas.UsagePeriod
+            /// - Remark: Generated from `#/components/schemas/UsageReport/month`.
+            public var month: Components.Schemas.UsagePeriod
+            /// - Remark: Generated from `#/components/schemas/UsageReport/total`.
+            public var total: Components.Schemas.UsagePeriod
+            /// Creates a new `UsageReport`.
+            ///
+            /// - Parameters:
+            ///   - currency: ISO 4217, e.g. USD.
+            ///   - timeZone: IANA zone that defines today and this month.
+            ///   - today:
+            ///   - month:
+            ///   - total:
+            public init(
+                currency: Swift.String,
+                timeZone: Swift.String,
+                today: Components.Schemas.UsagePeriod,
+                month: Components.Schemas.UsagePeriod,
+                total: Components.Schemas.UsagePeriod
+            ) {
+                self.currency = currency
+                self.timeZone = timeZone
+                self.today = today
+                self.month = month
+                self.total = total
+            }
+            public enum CodingKeys: String, CodingKey {
+                case currency
+                case timeZone
+                case today
+                case month
+                case total
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UsagePeriod`.
+        public struct UsagePeriod: Codable, Hashable, Sendable {
+            /// Number of AI answers.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UsagePeriod/answers`.
+            public var answers: Swift.Int
+            /// All input tokens, cached ones included.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UsagePeriod/inputTokens`.
+            public var inputTokens: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/UsagePeriod/cachedInputTokens`.
+            public var cachedInputTokens: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/UsagePeriod/outputTokens`.
+            public var outputTokens: Swift.Int64
+            /// Estimated cost in the report currency.
+            ///
+            /// - Remark: Generated from `#/components/schemas/UsagePeriod/cost`.
+            public var cost: Swift.Double
+            /// Creates a new `UsagePeriod`.
+            ///
+            /// - Parameters:
+            ///   - answers: Number of AI answers.
+            ///   - inputTokens: All input tokens, cached ones included.
+            ///   - cachedInputTokens:
+            ///   - outputTokens:
+            ///   - cost: Estimated cost in the report currency.
+            public init(
+                answers: Swift.Int,
+                inputTokens: Swift.Int64,
+                cachedInputTokens: Swift.Int64,
+                outputTokens: Swift.Int64,
+                cost: Swift.Double
+            ) {
+                self.answers = answers
+                self.inputTokens = inputTokens
+                self.cachedInputTokens = cachedInputTokens
+                self.outputTokens = outputTokens
+                self.cost = cost
+            }
+            public enum CodingKeys: String, CodingKey {
+                case answers
+                case inputTokens
+                case cachedInputTokens
+                case outputTokens
+                case cost
             }
         }
         /// RFC 9457 problem details.
@@ -537,7 +652,8 @@ extension Components {
             public var status: Swift.Int?
             /// - Remark: Generated from `#/components/schemas/Problem/detail`.
             public var detail: Swift.String?
-            /// Stable machine-readable code, e.g. draft_already_submitted, empty_draft.
+            /// Stable machine-readable code, e.g. draft_already_submitted, empty_draft, request_not_cancellable, request_not_retryable, invalid_title.
+            ///
             ///
             /// - Remark: Generated from `#/components/schemas/Problem/code`.
             public var code: Swift.String?
@@ -548,7 +664,7 @@ extension Components {
             ///   - title:
             ///   - status:
             ///   - detail:
-            ///   - code: Stable machine-readable code, e.g. draft_already_submitted, empty_draft.
+            ///   - code: Stable machine-readable code, e.g. draft_already_submitted, empty_draft, request_not_cancellable, request_not_retryable, invalid_title.
             public init(
                 _type: Swift.String? = nil,
                 title: Swift.String? = nil,

@@ -116,6 +116,47 @@ public struct LiveCopilotService: CopilotService {
   }
  }
 
+ public func cancelRequest(id: UUID) async throws -> AIRequest {
+  switch try await call({ try await client.cancelRequest(path: .init(requestId: id.uuidString)) }) {
+  case .ok(let ok): return try DTOMapping.request(ok.body.json)
+  case .conflict: throw CopilotServiceError.requestNotCancellable
+  case .unauthorized: throw CopilotServiceError.unauthorized
+  case .notFound: throw CopilotServiceError.notFound
+  case .undocumented(let status, _): throw Self.error(forStatus: status)
+  }
+ }
+
+ public func retryRequest(id: UUID) async throws -> AIRequest {
+  switch try await call({ try await client.retryRequest(path: .init(requestId: id.uuidString)) }) {
+  case .accepted(let accepted): return try DTOMapping.request(accepted.body.json)
+  case .conflict: throw CopilotServiceError.requestNotRetryable
+  case .unauthorized: throw CopilotServiceError.unauthorized
+  case .notFound: throw CopilotServiceError.notFound
+  case .undocumented(let status, _): throw Self.error(forStatus: status)
+  }
+ }
+
+ public func renameConversation(id: UUID, title: String) async throws -> Conversation {
+  let output = try await call({
+   try await client.renameConversation(path: .init(conversationId: id.uuidString), body: .json(.init(title: title)))
+  })
+  switch output {
+  case .ok(let ok): return try DTOMapping.conversation(ok.body.json)
+  case .badRequest: throw CopilotServiceError.invalidTitle
+  case .unauthorized: throw CopilotServiceError.unauthorized
+  case .notFound: throw CopilotServiceError.notFound
+  case .undocumented(let status, _): throw Self.error(forStatus: status)
+  }
+ }
+
+ public func deleteConversation(id: UUID) async throws {
+  switch try await call({ try await client.deleteConversation(path: .init(conversationId: id.uuidString)) }) {
+  case .noContent: return
+  case .unauthorized: throw CopilotServiceError.unauthorized
+  case .undocumented(let status, _): throw Self.error(forStatus: status)
+  }
+ }
+
  // MARK: - Error translation
 
  /// Runs a generated-client call and turns transport failures (offline, timeout, TLS) into `.unavailable`,

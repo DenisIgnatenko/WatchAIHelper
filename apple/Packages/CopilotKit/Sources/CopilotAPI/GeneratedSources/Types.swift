@@ -31,6 +31,19 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/conversations`.
     /// - Remark: Generated from `#/paths//v1/conversations/post(createConversation)`.
     func createConversation(_ input: Operations.CreateConversation.Input) async throws -> Operations.CreateConversation.Output
+    /// Rename a conversation. A title set by the user is never replaced by an AI-suggested one.
+    ///
+    /// - Remark: HTTP `PATCH /v1/conversations/{conversationId}`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/patch(renameConversation)`.
+    func renameConversation(_ input: Operations.RenameConversation.Input) async throws -> Operations.RenameConversation.Output
+    /// Delete a conversation with its messages, drafts and stored images (spec 47).
+    ///
+    /// Irreversible. Image bytes are deleted immediately. If it was the active conversation, the most recently updated remaining one becomes active (or a new one is created on the next home call). The AI cost report keeps the token counts, without any content. Idempotent: deleting a missing conversation returns 204.
+    ///
+    ///
+    /// - Remark: HTTP `DELETE /v1/conversations/{conversationId}`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/delete(deleteConversation)`.
+    func deleteConversation(_ input: Operations.DeleteConversation.Input) async throws -> Operations.DeleteConversation.Output
     /// Make a conversation active on all devices.
     ///
     /// - Remark: HTTP `PUT /v1/active-conversation`.
@@ -75,11 +88,35 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /v1/drafts/{draftId}/submit`.
     /// - Remark: Generated from `#/paths//v1/drafts/{draftId}/submit/post(submitDraft)`.
     func submitDraft(_ input: Operations.SubmitDraft.Input) async throws -> Operations.SubmitDraft.Output
+    /// Cancel a Send that still waits for its images; the photos and text return to the draft.
+    ///
+    /// Allowed while the request is waitingForAttachments or blocked (no message exists yet, spec 26). Idempotent: cancelling a cancelled request returns it unchanged.
+    ///
+    ///
+    /// - Remark: HTTP `POST /v1/requests/{requestId}/cancel`.
+    /// - Remark: Generated from `#/paths//v1/requests/{requestId}/cancel/post(cancelRequest)`.
+    func cancelRequest(_ input: Operations.CancelRequest.Input) async throws -> Operations.CancelRequest.Output
+    /// Ask the AI again after a failed answer. Reuses the same question; no new message is created.
+    ///
+    /// Allowed for a failed request whose question is still the last message of its conversation. Idempotent: retrying a request that is already queued, processing or completed returns it unchanged.
+    ///
+    ///
+    /// - Remark: HTTP `POST /v1/requests/{requestId}/retry`.
+    /// - Remark: Generated from `#/paths//v1/requests/{requestId}/retry/post(retryRequest)`.
+    func retryRequest(_ input: Operations.RetryRequest.Input) async throws -> Operations.RetryRequest.Output
     /// State of an AI request, optionally long-polling for a change.
     ///
     /// - Remark: HTTP `GET /v1/requests/{requestId}`.
     /// - Remark: Generated from `#/paths//v1/requests/{requestId}/get(getRequest)`.
     func getRequest(_ input: Operations.GetRequest.Input) async throws -> Operations.GetRequest.Output
+    /// AI token usage and its estimated cost for today, this month and all time.
+    ///
+    /// Cost is estimated from token counts with the prices configured on the backend (USD per 1M tokens). "Today" and "this month" use the backend's reporting time zone.
+    ///
+    ///
+    /// - Remark: HTTP `GET /v1/usage`.
+    /// - Remark: Generated from `#/paths//v1/usage/get(getUsage)`.
+    func getUsage(_ input: Operations.GetUsage.Input) async throws -> Operations.GetUsage.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -114,6 +151,37 @@ extension APIProtocol {
         try await createConversation(Operations.CreateConversation.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Rename a conversation. A title set by the user is never replaced by an AI-suggested one.
+    ///
+    /// - Remark: HTTP `PATCH /v1/conversations/{conversationId}`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/patch(renameConversation)`.
+    public func renameConversation(
+        path: Operations.RenameConversation.Input.Path,
+        headers: Operations.RenameConversation.Input.Headers = .init(),
+        body: Operations.RenameConversation.Input.Body
+    ) async throws -> Operations.RenameConversation.Output {
+        try await renameConversation(Operations.RenameConversation.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a conversation with its messages, drafts and stored images (spec 47).
+    ///
+    /// Irreversible. Image bytes are deleted immediately. If it was the active conversation, the most recently updated remaining one becomes active (or a new one is created on the next home call). The AI cost report keeps the token counts, without any content. Idempotent: deleting a missing conversation returns 204.
+    ///
+    ///
+    /// - Remark: HTTP `DELETE /v1/conversations/{conversationId}`.
+    /// - Remark: Generated from `#/paths//v1/conversations/{conversationId}/delete(deleteConversation)`.
+    public func deleteConversation(
+        path: Operations.DeleteConversation.Input.Path,
+        headers: Operations.DeleteConversation.Input.Headers = .init()
+    ) async throws -> Operations.DeleteConversation.Output {
+        try await deleteConversation(Operations.DeleteConversation.Input(
+            path: path,
+            headers: headers
         ))
     }
     /// Make a conversation active on all devices.
@@ -222,6 +290,38 @@ extension APIProtocol {
             body: body
         ))
     }
+    /// Cancel a Send that still waits for its images; the photos and text return to the draft.
+    ///
+    /// Allowed while the request is waitingForAttachments or blocked (no message exists yet, spec 26). Idempotent: cancelling a cancelled request returns it unchanged.
+    ///
+    ///
+    /// - Remark: HTTP `POST /v1/requests/{requestId}/cancel`.
+    /// - Remark: Generated from `#/paths//v1/requests/{requestId}/cancel/post(cancelRequest)`.
+    public func cancelRequest(
+        path: Operations.CancelRequest.Input.Path,
+        headers: Operations.CancelRequest.Input.Headers = .init()
+    ) async throws -> Operations.CancelRequest.Output {
+        try await cancelRequest(Operations.CancelRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Ask the AI again after a failed answer. Reuses the same question; no new message is created.
+    ///
+    /// Allowed for a failed request whose question is still the last message of its conversation. Idempotent: retrying a request that is already queued, processing or completed returns it unchanged.
+    ///
+    ///
+    /// - Remark: HTTP `POST /v1/requests/{requestId}/retry`.
+    /// - Remark: Generated from `#/paths//v1/requests/{requestId}/retry/post(retryRequest)`.
+    public func retryRequest(
+        path: Operations.RetryRequest.Input.Path,
+        headers: Operations.RetryRequest.Input.Headers = .init()
+    ) async throws -> Operations.RetryRequest.Output {
+        try await retryRequest(Operations.RetryRequest.Input(
+            path: path,
+            headers: headers
+        ))
+    }
     /// State of an AI request, optionally long-polling for a change.
     ///
     /// - Remark: HTTP `GET /v1/requests/{requestId}`.
@@ -236,6 +336,16 @@ extension APIProtocol {
             query: query,
             headers: headers
         ))
+    }
+    /// AI token usage and its estimated cost for today, this month and all time.
+    ///
+    /// Cost is estimated from token counts with the prices configured on the backend (USD per 1M tokens). "Today" and "this month" use the backend's reporting time zone.
+    ///
+    ///
+    /// - Remark: HTTP `GET /v1/usage`.
+    /// - Remark: Generated from `#/paths//v1/usage/get(getUsage)`.
+    public func getUsage(headers: Operations.GetUsage.Input.Headers = .init()) async throws -> Operations.GetUsage.Output {
+        try await getUsage(Operations.GetUsage.Input(headers: headers))
     }
 }
 

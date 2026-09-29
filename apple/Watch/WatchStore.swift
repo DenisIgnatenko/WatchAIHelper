@@ -1,6 +1,7 @@
 import CopilotCore
 import Foundation
 import Observation
+import WidgetKit
 
 /// Screens the Watch app can navigate to.
 enum WatchRoute: Hashable {
@@ -42,6 +43,9 @@ final class WatchStore {
  private let onAnswerReady: @MainActor () -> Void
  /// The running observation; cancelled when a new request replaces it.
  private var observationTask: Task<Void, Never>?
+ /// What the complication showed last time; the widget is reloaded only when this changes
+ /// (WidgetKit has a daily reload budget, so no reload on every poll).
+ private var glance: GlanceState?
 
  /// - Parameter onAnswerReady: called once per completed answer (the app plays a haptic there).
  init(service: any CopilotService, onAnswerReady: @escaping @MainActor () -> Void = {}) {
@@ -64,6 +68,7 @@ final class WatchStore {
    if let latest = snapshot.latestRequest, !latest.state.isTerminal, activeRequest?.id != latest.id {
     observe(latest)
    }
+   updateComplication(GlanceState(home: snapshot))
   } catch {
    errorText = Self.describe(error)
   }
@@ -83,6 +88,12 @@ final class WatchStore {
  var refreshInterval: Duration {
   if case .uploading = home?.draft.readiness { return .seconds(3) }
   return .seconds(4)
+ }
+
+ /// The request to show on the main screen: the one being followed, otherwise the latest of the conversation.
+ /// A failed one stays visible (with Retry) after the app was relaunched.
+ var visibleRequest: AIRequest? {
+  activeRequest ?? home?.latestRequest
  }
 
  // MARK: - Actions
@@ -107,6 +118,46 @@ final class WatchStore {
    unsentText = text
    errorText = Self.describe(error)
    await refresh()
+  }
+ }
+
+ /// Cancel Send while it still waits for photos (spec 26). The photos return to the draft card.
+ func cancel(_ request: AIRequest) async {
+  do {
+   let cancelled = try await service.cancelRequest(id: request.id)
+   observationTask?.cancel()
+   activeRequest = cancelled
+   errorText = nil
+   await refresh()
+  } catch {
+   errorText = Self.describe(error)
+   await refresh()
+  }
+ }
+
+ /// Ask again after a failed answer: same question, no duplicate message.
+ func retry(_ request: AIRequest) async {
+  do {
+   let queued = try await service.retryRequest(id: request.id)
+   errorText = nil
+   observe(queued)
+  } catch {
+   errorText = Self.describe(error)
+  }
+ }
+
+ /// Irreversible; the view asks for confirmation first.
+ func deleteConversation(_ conversation: Conversation) async {
+  do {
+   try await service.deleteConversation(id: conversation.id)
+   conversations.removeAll { $0.id == conversation.id }
+   if home?.activeConversation.id == conversation.id {
+    observationTask?.cancel()
+    activeRequest = nil
+   }
+   await refresh()
+  } catch {
+   errorText = Self.describe(error)
   }
  }
 
@@ -164,6 +215,14 @@ final class WatchStore {
   }
  }
 
+ // MARK: - Complication
+
+ private func updateComplication(_ state: GlanceState) {
+  guard state != glance else { return }
+  glance = state
+  WidgetCenter.shared.reloadAllTimelines()
+ }
+
  // MARK: - Errors
 
  private static func describe(_ error: Error) -> String {
@@ -174,6 +233,9 @@ final class WatchStore {
   case .notFound: "Not found."
   case .unauthorized: "Device not authorized."
   case .unavailable: "Server unavailable."
+  case .requestNotCancellable: "Already sent to the AI."
+  case .requestNotRetryable: "Ask the question again."
+  case .invalidTitle: "Invalid title."
   case nil: "Something went wrong."
   }
  }

@@ -5,11 +5,28 @@ public struct AIRequest: Identifiable, Hashable, Sendable {
  public let id: UUID
  public let conversationId: UUID
  public let state: State
+ /// When Send was pressed. Screens and the complication show the elapsed time from here.
+ public let createdAt: Date
 
- public init(id: UUID, conversationId: UUID, state: State) {
+ public init(id: UUID, conversationId: UUID, state: State, createdAt: Date) {
   self.id = id
   self.conversationId = conversationId
   self.state = state
+  self.createdAt = createdAt
+ }
+
+ /// The user may still cancel: nothing was sent to the AI yet (spec 26).
+ public var isCancellable: Bool {
+  switch state {
+  case .waitingForAttachments, .blocked: true
+  default: false
+  }
+ }
+
+ /// The AI failed after the backend's own retries; the user may ask again for the same question.
+ public var isRetryable: Bool {
+  if case .failed = state { return true }
+  return false
  }
 
  /// Mirrors the backend state machine. The backend is the only place where transitions happen;

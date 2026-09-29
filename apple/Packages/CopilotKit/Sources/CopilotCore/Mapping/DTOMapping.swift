@@ -65,7 +65,28 @@ enum DTOMapping {
   return AIRequest(
    id: try uuid(dto.id, "request.id"),
    conversationId: try uuid(dto.conversationId, "request.conversationId"),
-   state: state
+   state: state,
+   createdAt: dto.createdAt
+  )
+ }
+
+ static func usage(_ dto: Components.Schemas.UsageReport) -> UsageReport {
+  UsageReport(
+   currency: dto.currency,
+   timeZone: dto.timeZone,
+   today: period(dto.today),
+   month: period(dto.month),
+   total: period(dto.total)
+  )
+ }
+
+ private static func period(_ dto: Components.Schemas.UsagePeriod) -> UsageReport.Period {
+  UsageReport.Period(
+   answers: dto.answers,
+   inputTokens: dto.inputTokens,
+   cachedInputTokens: dto.cachedInputTokens,
+   outputTokens: dto.outputTokens,
+   cost: dto.cost
   )
  }
 

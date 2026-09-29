@@ -2,12 +2,12 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// Entry point of the Watch widget extension. For now it contains only one Control.
-/// Complications / Smart Stack widgets (spec 40) can be added to this bundle later.
+/// Entry point of the Watch widget extension: the Action Button Control and the complication (spec 40).
 @main
 struct CopilotWatchWidgets: WidgetBundle {
  var body: some Widget {
   AskAIControl()
+  CopilotComplication()
  }
 }
 

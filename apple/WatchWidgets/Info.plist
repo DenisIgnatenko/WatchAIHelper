@@ -20,6 +20,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CopilotDeviceToken</key>
+	<string>$(COPILOT_DEVICE_TOKEN)</string>
+	<key>CopilotHost</key>
+	<string>$(COPILOT_HOST)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

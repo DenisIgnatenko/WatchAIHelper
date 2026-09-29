@@ -41,6 +41,25 @@ public protocol CopilotService: Sendable {
  /// Current state of a request. With `waitSeconds > 0` the call returns as soon as the state changes
  /// or when the time runs out (long-poll), whichever comes first.
  func request(id: UUID, waitSeconds: Int) async throws -> AIRequest
+
+ /// Cancels a Send that still waits for its photos; the photos and text return to the draft.
+ /// Throws `.requestNotCancellable` when the question already went to the AI.
+ func cancelRequest(id: UUID) async throws -> AIRequest
+
+ /// Asks the AI again after a failed answer, for the same question (no duplicate message).
+ /// Throws `.requestNotRetryable` when newer messages exist.
+ func retryRequest(id: UUID) async throws -> AIRequest
+
+ /// A user-given title is final: the AI never replaces it.
+ func renameConversation(id: UUID, title: String) async throws -> Conversation
+
+ /// Deletes the conversation with its messages and photos (spec 47). Irreversible. Idempotent.
+ func deleteConversation(id: UUID) async throws
+}
+
+/// AI spending report, used by the iPhone only (Interface Segregation: the Watch and its mock do not implement it).
+public protocol UsageReportingService: Sendable {
+ func usage() async throws -> UsageReport
 }
 
 /// Errors every `CopilotService` implementation maps its failures to, so the UI handles one error type.
@@ -56,4 +75,10 @@ public enum CopilotServiceError: Error, Equatable, Sendable {
  case unauthorized
  /// Network or backend unavailable. Safe to retry with the same idempotency key.
  case unavailable
+ /// Too late to cancel: the question was already sent to the AI.
+ case requestNotCancellable
+ /// Only a failed answer to the latest question can be retried.
+ case requestNotRetryable
+ /// Empty or too long title.
+ case invalidTitle
 }

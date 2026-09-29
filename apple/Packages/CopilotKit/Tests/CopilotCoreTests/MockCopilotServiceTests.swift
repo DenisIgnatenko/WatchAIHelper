@@ -93,4 +93,36 @@ struct MockCopilotServiceTests {
   let after = try await service.home().draft.id
   #expect(before != after)
  }
+ @Test func cancelReturnsPhotosToTheDraft() async throws {
+  let timing = MockCopilotService.Timing(processing: .zero, uploadInterval: .seconds(60), pollStep: .milliseconds(5))
+  let service = MockCopilotService(scenario: .photosUploading(2), timing: timing)
+  let draftId = try await service.home().draft.id
+  let request = try await service.submit(draftId: draftId, text: nil, idempotencyKey: UUID())
+  #expect(request.isCancellable)
+
+  let cancelled = try await service.cancelRequest(id: request.id)
+
+  #expect(cancelled.state == .cancelled)
+  #expect(try await service.home().draft.id == draftId)
+  // The same draft can be sent again.
+  _ = try await service.submit(draftId: draftId, text: nil, idempotencyKey: UUID())
+ }
+
+ @Test func deletingTheActiveConversationSwitchesToAnother() async throws {
+  let service = MockCopilotService(timing: .instant)
+  let first = try await service.home().activeConversation.id
+  let second = try await service.createConversation(mode: .general).id
+
+  try await service.deleteConversation(id: second)
+
+  #expect(try await service.home().activeConversation.id == first)
+  #expect(try await service.conversations().map(\.id) == [first])
+ }
+
+ @Test func renameRejectsBlankTitles() async throws {
+  let service = MockCopilotService(timing: .instant)
+  let id = try await service.home().activeConversation.id
+  #expect(try await service.renameConversation(id: id, title: " Læsning 4 ").title == "Læsning 4")
+  await #expect(throws: CopilotServiceError.invalidTitle) { try await service.renameConversation(id: id, title: "  ") }
+ }
 }

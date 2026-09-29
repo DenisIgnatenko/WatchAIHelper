@@ -68,24 +68,38 @@ struct DraftView: View {
      .controlSize(.large)
      .disabled(!store.canSend)
 
-     if let request = store.request, !request.state.isTerminal {
-      HStack {
-       ProgressView()
-       Text(statusText(request.state)).foregroundStyle(.secondary)
-      }
+     if let request = store.visibleRequest {
+      RequestStatus(request: request, isLatest: request.id == store.latestRequest?.id)
      }
      if let error = store.errorText {
       Text(error).foregroundStyle(.red).font(.footnote)
      }
 
-     if let answer = store.lastAnswer?.text {
-      VStack(alignment: .leading, spacing: 6) {
-       Text("Last answer").font(.caption).foregroundStyle(.secondary)
-       Text(answer)
+     if let conversation = store.conversation {
+      // Latest answer; tap for the whole conversation.
+      NavigationLink {
+       ConversationHistoryView(conversation: conversation)
+      } label: {
+       VStack(alignment: .leading, spacing: 6) {
+        HStack {
+         Text(store.lastAnswer == nil ? "Conversation" : "Last answer").font(.caption).foregroundStyle(.secondary)
+         Spacer()
+         Label("All messages", systemImage: "chevron.right")
+          .labelStyle(.titleAndIcon)
+          .font(.caption)
+          .foregroundStyle(.tint)
+        }
+        if let answer = store.lastAnswer?.text {
+         Text(answer)
+          .foregroundStyle(.primary)
+          .multilineTextAlignment(.leading)
+        }
+       }
+       .padding()
+       .frame(maxWidth: .infinity, alignment: .leading)
+       .background(.fill.tertiary, in: .rect(cornerRadius: 12))
       }
-      .padding()
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .background(.fill.tertiary, in: .rect(cornerRadius: 12))
+      .buttonStyle(.plain)
      }
     }
     .padding()
@@ -93,8 +107,21 @@ struct DraftView: View {
    .navigationTitle(store.conversation.map { $0.mode == .danishExam ? "🎓 \($0.title)" : $0.title } ?? "AI Copilot")
    .navigationBarTitleDisplayMode(.inline)
    .toolbar {
+    ToolbarItem(placement: .topBarLeading) {
+     NavigationLink {
+      UsageView()
+     } label: {
+      Label("AI costs", systemImage: "chart.bar")
+     }
+    }
     // Which conversation receives the photos and the answer - always visible and switchable.
-    ToolbarItem(placement: .topBarTrailing) { ConversationMenu() }
+    ToolbarItem(placement: .topBarTrailing) {
+     NavigationLink {
+      ConversationsView()
+     } label: {
+      Label("Conversations", systemImage: "bubble.left.and.bubble.right")
+     }
+    }
    }
    .refreshable { await store.refresh() }
   }
@@ -111,45 +138,53 @@ struct DraftView: View {
   }
  }
 
- private func statusText(_ state: AIRequest.State) -> String {
-  switch state {
-  case .waitingForAttachments(let uploaded, let total): "Waiting for photos \(uploaded)/\(total)…"
-  case .blocked: "A photo failed. Retry or remove it."
-  case .queued, .processing: "Processing… you can put the iPhone away."
-  case .completed: "Answer ready"
-  case .failed(let reason): reason
-  case .cancelled: "Cancelled"
-  }
- }
 }
 
-/// Conversation picker: the checked one is active on the iPhone AND the Watch (stored on the backend).
-private struct ConversationMenu: View {
+/// State of the Send with the action that fits it (spec 26): Cancel while photos are missing,
+/// Ask again after a failed answer. Elapsed time since Send, so a long wait is visible.
+private struct RequestStatus: View {
  @Environment(DraftStore.self) private var store
+ let request: AIRequest
+ /// Retry only makes sense for the latest question of the conversation (the backend enforces it too).
+ let isLatest: Bool
 
  var body: some View {
-  Menu {
-   Section("New conversation") {
-    ForEach(ConversationMode.allCases, id: \.self) { mode in
-     Button(mode.displayName, systemImage: mode.symbolName) {
-      Task { await store.newConversation(mode: mode) }
+  if !request.state.isTerminal {
+   VStack(alignment: .leading, spacing: 8) {
+    HStack {
+     ProgressView()
+     Text(statusText).foregroundStyle(.secondary)
+     Spacer()
+     Text(request.createdAt, style: .timer).monospacedDigit().foregroundStyle(.secondary)
+    }
+    if request.isCancellable {
+     Button("Cancel Send", systemImage: "xmark.circle", role: .destructive) {
+      Task { await store.cancel(request) }
      }
+     .buttonStyle(.bordered)
     }
    }
-   Section("Conversations") {
-    ForEach(store.conversations) { conversation in
-     Button {
-      Task { await store.select(conversation) }
-     } label: {
-      Label(conversation.title, systemImage: conversation.id == store.conversation?.id ? "checkmark" : conversation.mode.symbolName)
-     }
+  } else if request.isRetryable, isLatest {
+   HStack {
+    Label(statusText, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
+    Spacer()
+    Button("Ask again", systemImage: "arrow.clockwise") {
+     Task { await store.retryAnswer(request) }
     }
+    .buttonStyle(.bordered)
    }
-  } label: {
-   Image(systemName: "bubble.left.and.bubble.right")
   }
-  // Load the list when the menu button appears (and again after each switch).
-  .task { await store.loadConversations() }
+ }
+
+ private var statusText: String {
+  switch request.state {
+  case .waitingForAttachments(let uploaded, let total): "Waiting for photos \(uploaded)/\(total)…"
+  case .blocked: "A photo failed. Retry it, or cancel and remove it."
+  case .queued, .processing: "Processing… you can put the iPhone away."
+  case .completed: "Answer ready"
+  case .failed(let reason): "No answer: \(reason)"
+  case .cancelled: "Cancelled"
+  }
  }
 }
 

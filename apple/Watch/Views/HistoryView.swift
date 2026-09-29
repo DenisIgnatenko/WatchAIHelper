@@ -4,6 +4,8 @@ import SwiftUI
 /// Conversation history: pick the active conversation or start a new one.
 struct HistoryView: View {
  @Environment(WatchStore.self) private var store
+ /// Conversation waiting for the delete confirmation (deleting is irreversible).
+ @State private var pendingDeletion: Conversation?
 
  var body: some View {
   List {
@@ -27,6 +29,10 @@ struct HistoryView: View {
        .foregroundStyle(.secondary)
      }
     }
+    // Swipe left to delete, as in Mail.
+    .swipeActions(edge: .trailing) {
+     Button("Delete", systemImage: "trash", role: .destructive) { pendingDeletion = conversation }
+    }
    }
 
    // Only without a backend: lets us try the draft card states without an iPhone app.
@@ -41,5 +47,19 @@ struct HistoryView: View {
   .compactList()
   .navigationTitle("History")
   .task { await store.loadConversations() }
+  .confirmationDialog(
+   "Delete \"\(pendingDeletion?.title ?? "")\"?",
+   isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+   titleVisibility: .visible
+  ) {
+   Button("Delete", role: .destructive) {
+    if let conversation = pendingDeletion {
+     Task { await store.deleteConversation(conversation) }
+    }
+    pendingDeletion = nil
+   }
+  } message: {
+   Text("Messages and photos are deleted from the server.")
+  }
  }
 }

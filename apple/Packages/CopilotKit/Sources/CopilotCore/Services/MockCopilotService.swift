@@ -61,6 +61,8 @@ public actor MockCopilotService: CopilotService {
   let conversationId: UUID
   let draftId: UUID
   let text: String?
+  let createdAt: Date
+  var cancelled = false
   /// Moment when all attachments became available (processing starts from here).
   var queuedAt: ContinuousClock.Instant?
   var userMessageId: UUID?
@@ -162,7 +164,9 @@ public actor MockCopilotService: CopilotService {
   if normalizedText == nil && draft.totalAttachments == 0 { throw CopilotServiceError.emptyDraft }
 
   // Freeze the draft and start a fresh one for the next question.
-  let request = RequestRecord(id: UUID(), conversationId: draft.conversationId, draftId: draft.id, text: normalizedText)
+  let request = RequestRecord(
+   id: UUID(), conversationId: draft.conversationId, draftId: draft.id, text: normalizedText, createdAt: Date()
+  )
   requests[request.id] = request
   requestByIdempotencyKey[idempotencyKey] = request.id
   drafts[draft.id]?.submittedRequestId = request.id
@@ -188,13 +192,56 @@ public actor MockCopilotService: CopilotService {
   return snapshot(of: requests[id]!)
  }
 
+ public func cancelRequest(id: UUID) async throws -> AIRequest {
+  advance()
+  guard let request = requests[id] else { throw CopilotServiceError.notFound }
+  if request.cancelled { return snapshot(of: request) }
+  guard request.queuedAt == nil else { throw CopilotServiceError.requestNotCancellable }
+  requests[id]?.cancelled = true
+  // The photos return to the draft: it becomes the current draft again.
+  drafts[request.draftId]?.submittedRequestId = nil
+  currentDraftByConversation[request.conversationId] = request.draftId
+  return snapshot(of: requests[id]!)
+ }
+
+ /// The mock never fails, so there is nothing to retry: the request is returned unchanged (idempotent).
+ public func retryRequest(id: UUID) async throws -> AIRequest {
+  guard let request = requests[id] else { throw CopilotServiceError.notFound }
+  return snapshot(of: request)
+ }
+
+ public func renameConversation(id: UUID, title: String) async throws -> Conversation {
+  let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+  guard !trimmed.isEmpty, trimmed.count <= 80 else { throw CopilotServiceError.invalidTitle }
+  guard conversationsById[id] != nil else { throw CopilotServiceError.notFound }
+  conversationsById[id]?.title = trimmed
+  return conversationsById[id]!
+ }
+
+ public func deleteConversation(id: UUID) async throws {
+  conversationsById[id] = nil
+  messagesByConversation[id] = nil
+  currentDraftByConversation[id] = nil
+  if activeConversationId == id {
+   // Like the backend: continue with the most recent remaining one, or start a new one.
+   if let next = conversationsById.values.max(by: { $0.updatedAt < $1.updatedAt }) {
+    activeConversationId = next.id
+   } else {
+    let fresh = Conversation(id: UUID(), title: "New conversation", updatedAt: Date())
+    conversationsById[fresh.id] = fresh
+    messagesByConversation[fresh.id] = []
+    activeConversationId = fresh.id
+   }
+  }
+ }
+
  // MARK: - Simulation
 
  /// Moves every request forward according to elapsed time.
  private func advance() {
   let now = clock.now
   for id in requests.keys {
-   guard var request = requests[id], request.assistantMessageId == nil else { continue }
+   guard var request = requests[id], request.assistantMessageId == nil, !request.cancelled else { continue }
    // Waiting -> queued once all attachments are "uploaded". Only now the user message is created.
    if request.queuedAt == nil, uploadedCount(of: request.draftId, at: now) == drafts[request.draftId]!.totalAttachments {
     request.queuedAt = now
@@ -292,7 +339,9 @@ public actor MockCopilotService: CopilotService {
 
  private func snapshot(of request: RequestRecord) -> AIRequest {
   let state: AIRequest.State
-  if let answerId = request.assistantMessageId {
+  if request.cancelled {
+   state = .cancelled
+  } else if let answerId = request.assistantMessageId {
    state = .completed(assistantMessageId: answerId)
   } else if request.queuedAt != nil {
    state = .processing
@@ -300,6 +349,6 @@ public actor MockCopilotService: CopilotService {
    let total = drafts[request.draftId]?.totalAttachments ?? 0
    state = .waitingForAttachments(uploaded: uploadedCount(of: request.draftId, at: clock.now), total: total)
   }
-  return AIRequest(id: request.id, conversationId: request.conversationId, state: state)
+  return AIRequest(id: request.id, conversationId: request.conversationId, state: state, createdAt: request.createdAt)
  }
 }

@@ -24,8 +24,8 @@ struct HomeView: View {
     }
     .compactRow()
 
-    if let request = store.activeRequest, !request.state.isTerminal {
-     StatusRow(text: request.state.statusText)
+    if let request = store.visibleRequest {
+     RequestControls(request: request, isLatest: request.id == home.latestRequest?.id)
     }
 
     if let unsent = store.unsentText {
@@ -36,17 +36,24 @@ struct HomeView: View {
       .compactRow()
     }
 
-    if let answer = home.lastAnswer {
-     NavigationLink(value: WatchRoute.conversation) {
-      Text(answer.text ?? "")
-       .font(CompactStyle.messageFont)
-       .lineLimit(4)
+    // The current conversation: its title (which conversation receives the question) and the latest answer.
+    NavigationLink(value: WatchRoute.conversation) {
+     VStack(alignment: .leading, spacing: 2) {
+      Label(home.activeConversation.title, systemImage: home.activeConversation.mode.symbolName)
+       .font(.caption)
+       .foregroundStyle(.secondary)
+       .lineLimit(1)
+      if let answer = home.lastAnswer?.text {
+       Text(answer)
+        .font(CompactStyle.messageFont)
+        .lineLimit(4)
+      }
      }
-     .compactRow()
     }
+    .compactRow()
 
     NavigationLink(value: WatchRoute.history) {
-     Label(home.activeConversation.title, systemImage: "bubble.left.and.bubble.right")
+     Label("History", systemImage: "clock.arrow.circlepath")
     }
     .compactRow()
     NavigationLink(value: WatchRoute.inputLab) {
@@ -77,6 +84,35 @@ struct StatusRow: View {
    Text(text).foregroundStyle(.secondary)
   }
   .infoRow()
+ }
+}
+
+/// State of the Send the user waits for, with the action that fits it:
+/// Cancel while photos are missing (spec 26), Retry after a failed answer.
+private struct RequestControls: View {
+ @Environment(WatchStore.self) private var store
+ let request: AIRequest
+ /// Retry only makes sense for the latest question of the conversation (the backend enforces it too).
+ let isLatest: Bool
+
+ var body: some View {
+  if !request.state.isTerminal {
+   StatusRow(text: request.state.statusText)
+   if request.isCancellable {
+    Button("Cancel Send", systemImage: "xmark", role: .destructive) {
+     Task { await store.cancel(request) }
+    }
+    .compactRow()
+   }
+  } else if request.isRetryable, isLatest {
+   Label(request.state.statusText, systemImage: "exclamationmark.triangle.fill")
+    .foregroundStyle(.red)
+    .infoRow()
+   Button("Ask again", systemImage: "arrow.clockwise") {
+    Task { await store.retry(request) }
+   }
+   .compactRow()
+  }
  }
 }
 
