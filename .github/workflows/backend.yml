@@ -1,0 +1,68 @@
+# Backend: tests on every push / pull request that touches the backend, the API contract or the deployment;
+# deploy to the Lightsail VM after green tests on main (only when enabled, see the deploy job).
+name: Backend
+
+on:
+ push:
+  branches: [main]
+  paths: [backend/**, api/**, deploy/**, .github/workflows/backend.yml]
+ pull_request:
+  paths: [backend/**, api/**, deploy/**, .github/workflows/backend.yml]
+ workflow_dispatch:
+
+# A newer push to the same branch cancels the older run (saves Actions minutes of a private repo).
+concurrency:
+ group: backend-${{ github.ref }}
+ cancel-in-progress: true
+
+jobs:
+ test:
+  runs-on: ubuntu-latest
+  timeout-minutes: 20
+  steps:
+   - uses: actions/checkout@v4
+   - uses: actions/setup-java@v4
+     with:
+      distribution: temurin
+      java-version: "25"
+      cache: maven
+   # Generates the server interfaces from api/openapi.yaml (contract drift breaks the compile), runs unit and
+   # integration tests against a real PostgreSQL (Testcontainers uses the runner's Docker).
+   - name: Build and test
+     working-directory: backend
+     run: mvn -B -ntp verify
+   - name: Test reports
+     if: failure()
+     uses: actions/upload-artifact@v4
+     with:
+      name: surefire-reports
+      path: backend/target/surefire-reports
+
+ # Continuous deployment. Off until the owner enables it (repository variable DEPLOY_ENABLED=true) and adds:
+ #  secrets.DEPLOY_SSH_KEY - private key of a deploy-only SSH key authorised on the server (not the Lightsail .pem);
+ #  vars.DEPLOY_HOST       - the server's static IP.
+ # Uses the same script as a manual deploy (DRY). The server .env already exists, so no secrets leave GitHub.
+ deploy:
+  needs: test
+  if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.DEPLOY_ENABLED == 'true'
+  runs-on: ubuntu-latest
+  timeout-minutes: 20
+  # A GitHub environment: can require a manual approval before each deploy (Settings > Environments).
+  environment: production
+  concurrency:
+   group: deploy-production
+   cancel-in-progress: false
+  steps:
+   - uses: actions/checkout@v4
+   - uses: actions/setup-java@v4
+     with:
+      distribution: temurin
+      java-version: "25"
+      cache: maven
+   - name: Deploy
+     env:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+     run: |
+      install -m 600 /dev/null "$RUNNER_TEMP/deploy_key"
+      printf '%s\n' "$DEPLOY_SSH_KEY" > "$RUNNER_TEMP/deploy_key"
+      SSH_KEY="$RUNNER_TEMP/deploy_key" JAVA_HOME_25="$JAVA_HOME" deploy/deploy.sh "${{ vars.DEPLOY_HOST }}"

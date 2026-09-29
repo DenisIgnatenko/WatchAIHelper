@@ -1,0 +1,35 @@
+# Apple clients: the generated Swift client must match api/openapi.yaml, and the shared package tests must pass.
+# Runs only when Apple code or the contract changes: macOS minutes count 10x against a private repo's quota.
+name: Apple
+
+on:
+ push:
+  branches: [main]
+  paths: [apple/**, api/**, .github/workflows/apple.yml]
+ pull_request:
+  paths: [apple/**, api/**, .github/workflows/apple.yml]
+ workflow_dispatch:
+
+concurrency:
+ group: apple-${{ github.ref }}
+ cancel-in-progress: true
+
+jobs:
+ package:
+  runs-on: macos-latest
+  timeout-minutes: 30
+  steps:
+   - uses: actions/checkout@v4
+   - uses: maxim-lobanov/setup-xcode@v1
+     with:
+      xcode-version: latest-stable
+   - uses: actions/cache@v4
+     with:
+      path: apple/Packages/CopilotKit/.build
+      key: spm-${{ runner.os }}-${{ hashFiles('apple/Packages/CopilotKit/Package.resolved') }}
+   # Contract check: regenerating the client from api/openapi.yaml must give exactly the committed code.
+   - name: Generated client is up to date
+     run: apple/scripts/generate-api.sh --check
+   - name: CopilotKit tests
+     working-directory: apple/Packages/CopilotKit
+     run: swift test
