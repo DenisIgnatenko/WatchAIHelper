@@ -63,7 +63,9 @@ The Watch app is a companion app that also works independently over the network 
 | `AICopilotWidgets` | iOS 27 | Widget extension hosting the "Ask with Camera" Control for the iPhone Action Button (PI 2.4, 2.5). |
 | `AICopilotWatchWidgets` | watchOS 27 | Widget extension hosting the "Ask AI" Control: the supported route to the Ultra Action Button (PI 7.3, 7.4). Later: complications / Smart Stack (spec 40). |
 
-No complication or capture extension targets in MVP (YAGNI; each also costs an App ID under a free account, PI 1.5). The architecture allows adding them later.
+No capture extension target in MVP (YAGNI; each also costs an App ID under a free account, PI 1.5).
+The Watch complication (spec 40) lives in the existing `AICopilotWatchWidgets` extension, so it costs no extra App ID.
+It reads `GET /v1/home` itself (no App Group); `GlanceState` in CopilotCore decides what it shows.
 
 ## 3. Shared Swift modules (`CopilotKit` package)
 
@@ -98,13 +100,13 @@ com.aicopilot
 ├── api/            # Generated OpenAPI interfaces + controllers, RFC 9457 problem responses
 ├── auth/           # Bearer device-token filter; resolves userId
 ├── conversation/   # Conversation, Message, active conversation
-├── draft/          # Draft, Attachment, upload handling
+├── draft/          # Draft, Attachment, upload handling, hourly purge of expired image bytes
 ├── submission/     # AiRequest state machine, SubmissionService (idempotent submit)
 ├── processing/     # Worker: claims jobs, calls AiEngine, persists assistant message
 ├── ai/             # Port: AiEngine; ContextBuilder; ResponseMode registry
 │ └── openai/       # Adapter: OpenAiEngine (openai-java)
 ├── storage/        # Port: BlobStorage; LocalDiskBlobStorage
-├── retention/      # Scheduled purge of expired images
+├── usage/          # AI usage ledger and cost report (GET /v1/usage)
 └── config/
 ```
 
@@ -125,7 +127,8 @@ users            (id, created_at)
 devices          (id, user_id, name, platform, token_hash, created_at, last_seen_at, revoked_at)
 user_settings    (user_id PK, active_conversation_id)
 
-conversations    (id, user_id, title, status[ACTIVE|ARCHIVED], created_at, updated_at)
+conversations    (id, user_id, title, title_source[PLACEHOLDER|AI|USER], mode[GENERAL|DANISH_EXAM],
+                  status[ACTIVE|ARCHIVED], created_at, updated_at)
 
 drafts           (id, user_id, conversation_id, text, state[OPEN|FROZEN|CONSUMED],
                   version, created_at, updated_at)
@@ -142,11 +145,16 @@ messages         (id, user_id, conversation_id, seq, role[USER|ASSISTANT], text,
                   ai_request_id, suggested_actions JSONB, response_mode, model, usage JSONB, created_at)
   UNIQUE (conversation_id, seq)                    -- stable ordering
 
-ai_requests      (id, user_id, conversation_id, draft_id UNIQUE, idempotency_key,
+ai_requests      (id, user_id, conversation_id, draft_id, idempotency_key,
                   state, user_message_id, assistant_message_id UNIQUE,
                   attempt_count, locked_until, last_error_code, response_mode,
                   created_at, updated_at, started_at, completed_at)
   UNIQUE (user_id, idempotency_key)
+  UNIQUE (draft_id) WHERE state <> 'CANCELLED'    -- a cancelled Send returns its draft, which can be sent again
+
+ai_usage         (id, user_id, ai_request_id UNIQUE, model, input_tokens, cached_input_tokens,
+                  cache_write_tokens, output_tokens, created_at)
+                                                  -- no FK to conversations: the cost report survives deletion
 ```
 
 Notes:
@@ -164,7 +172,8 @@ Authentication: `Authorization: Bearer <device token>` on every request. Errors:
 | `GET /v1/home` | **One-call snapshot for the Watch main screen**: active conversation, draft summary (counts by state, text), latest request state, last answer preview. Supports `ETag` / `If-None-Match`. | read |
 | `GET /v1/conversations?cursor=` | List conversations | read |
 | `POST /v1/conversations` | Create; body contains client-generated `id` | PK |
-| `GET /v1/conversations/{id}` / `DELETE` | Read / delete (deletes blobs too, spec 47) | natural |
+| `PATCH /v1/conversations/{id}` | Rename; a user title is final (the AI never replaces it) | natural |
+| `DELETE /v1/conversations/{id}` | Delete with messages, drafts, requests and image bytes (spec 47); the active conversation moves to the most recent remaining one | natural |
 | `PUT /v1/active-conversation` | Set the active conversation (synced between devices) | natural |
 | `GET /v1/conversations/{id}/messages?after=` | Messages in `seq` order | read |
 | `GET /v1/conversations/{id}/draft` | Get-or-create the current draft | natural |
@@ -175,7 +184,8 @@ Authentication: `Authorization: Bearer <device token>` on every request. Errors:
 | `POST /v1/drafts/{id}/submit` | Header `Idempotency-Key`; body `{ text? }`. Freezes the draft and creates an AI request. Returns `202` + request. | key + `draft_id` unique |
 | `GET /v1/requests/{id}?waitSeconds=0..25` | Request state; long-poll until the state changes or timeout | read |
 | `POST /v1/requests/{id}/cancel` | Cancel Send (`WAITING`/`BLOCKED` only); the draft returns to `OPEN` | natural |
-| `POST /v1/requests/{id}/retry` | Retry a `FAILED` inference. Same user message, **no new message**. | natural |
+| `POST /v1/requests/{id}/retry` | Retry a `FAILED` inference of the latest question. Same user message, **no new message**. | natural |
+| `GET /v1/usage` | Tokens and estimated cost: today, this month, all time (prices configured on the backend) | read |
 
 Why two steps for attachments (register, then upload): the backend learns about each page **before** its bytes arrive. This lets the Watch show "Uploading 2/3" and lets the backend refuse to run on an incomplete set (Invariant 6). The upload itself is a plain file body, which is what an iOS background session supports (PI 10.4).
 
@@ -190,7 +200,7 @@ A text question from the Watch is the same pipeline: `submit(draftId, text)` on 
  (created) ─► OPEN ───┘
                │ submit
                ▼
-             FROZEN ──── cancel request ───► OPEN
+             FROZEN ──── cancel request ───► OPEN   (photos and text kept; a newer OPEN draft is merged into it)
                │ all attachments UPLOADED (same transaction as UserMessage creation)
                ▼
             CONSUMED   (immutable; a new OPEN draft is created lazily)
@@ -365,7 +375,7 @@ ai.ResponseMode registry                  WATCH_CONCISE now; LANGUAGE_TUTOR etc.
  Interim (Phase 2): the Watch build reads host + token from the git-ignored `Signing.local.xcconfig` via Info.plist.
  Phase 5 replaces this with pairing through the iPhone and Keychain storage.
 - Logs: structured JSON with `requestId`, `conversationId`, `draftId`, `messageId`, `aiRequestId`, durations and OpenAI status. **No message text, no image content, no secrets** (spec 59).
-- Retention: original images are purged after `IMAGE_RETENTION_DAYS` (default 30). Deleting a conversation deletes its blobs immediately. OpenAI side: 30-day abuse-monitoring logs, no application state with `store: false` (PI 11.6). This is documented in the app's settings screen (spec 47).
+- Retention: original images are purged after `IMAGE_RETENTION_DAYS` (default 30). Deleting a conversation deletes its blobs immediately (after the database commit). OpenAI side: 30-day abuse-monitoring logs, no application state with `store: false` (PI 11.6). Not yet explained inside the apps (spec 47 asks for it in a settings screen).
 
 ## 18. Multi-user readiness (future, not built now)
 

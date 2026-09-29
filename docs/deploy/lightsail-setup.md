@@ -50,3 +50,26 @@ ssh -i ~/.ssh/aicopilot-lightsail.pem ubuntu@<STATIC_IP> 'uname -a'
 
 Send the static IP. Server software (Docker, Compose files, Caddy) is installed by a script
 from `deploy/` in Phase 2. The `.pem` key and `backend/.env` never go into git.
+
+## 7. Continuous deployment from GitHub Actions (optional)
+
+`.github/workflows/backend.yml` deploys after green tests on `main`, but only once it is enabled.
+It uses a **separate deploy key**, never the Lightsail `.pem`: the key can be revoked on the server at any time
+without touching your own access.
+
+1. Create the key on the Mac (no passphrase: it is used by a machine):
+   ```sh
+   ssh-keygen -t ed25519 -N "" -C github-deploy -f ~/.ssh/aicopilot-github-deploy
+   ```
+2. Authorise it on the server:
+   ```sh
+   ssh -i ~/.ssh/aicopilot-lightsail.pem ubuntu@<STATIC_IP> \
+    "cat >> ~/.ssh/authorized_keys" < ~/.ssh/aicopilot-github-deploy.pub
+   ```
+3. GitHub repository > Settings > Secrets and variables > Actions:
+   - secret `DEPLOY_SSH_KEY` = contents of `~/.ssh/aicopilot-github-deploy` (the private key);
+   - variables `DEPLOY_HOST` = `<STATIC_IP>`, `DEPLOY_ENABLED` = `true`.
+4. Optional: Settings > Environments > `production` > Required reviewers, to approve each deploy by hand.
+
+Revoke: delete the `github-deploy` line from `~/.ssh/authorized_keys` on the server and the secret on GitHub.
+Port 22 must stay open to the internet for this (GitHub runners have no fixed IP).

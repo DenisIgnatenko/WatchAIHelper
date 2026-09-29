@@ -21,7 +21,13 @@
 
 ## Tests
 
-`cd Packages/CopilotKit && swift test`
+`cd Packages/CopilotKit && swift test` (also runs in GitHub Actions, together with the generated-client check).
+
+## Complication
+
+Watch face > edit > complications > AI Copilot. It shows photo upload progress ("2/3"), a running timer while
+the AI works, and ✓ when the answer is ready. Without push (free account) it updates instantly only while the
+Watch app is open; otherwise watchOS refreshes it on its own schedule (typically every 5-30 minutes).
 Keep the repository outside iCloud-synced folders (e.g. not in `~/Documents` with iCloud Drive "Desktop & Documents"):
 iCloud adds file attributes that break code signing and can corrupt `.git`.
 
@@ -32,9 +38,11 @@ iCloud adds file attributes that break code signing and can corrupt `.git`.
 | `project.yml` | XcodeGen project specification (targets, settings) |
 | `Config/` | xcconfig files; `Signing.local.xcconfig` is personal and git-ignored |
 | `Packages/CopilotKit` | Shared Swift package: domain, service contract, mock, request observation |
-| `iOS/` | iOS app (Phase 1: placeholder + "Ask with Camera" App Shortcut) |
+| `iOS/` | iOS app: camera, draft, conversations, history, AI costs, "Ask with Camera" App Shortcut |
 | `Watch/` | watchOS app |
 | `iOSWidgets/` | iOS widget extension: "Ask with Camera" Control for the iPhone Action Button |
 | `iOSShared/` | Sources compiled into both the iOS app and its widget extension |
-| `WatchWidgets/` | watchOS widget extension: "Ask AI" Control for the Ultra Action Button |
+| `WatchWidgets/` | watchOS widget extension: "Ask AI" Control for the Ultra Action Button, complication / Smart Stack widget |
+| `scripts/generate-api.sh` | Regenerates the Swift client from `api/openapi.yaml` (`--check` in CI) |
+| `scripts/make-app-icon.swift` | Draws the app icon for iOS and watchOS into both asset catalogs |
 | `WatchShared/` | Sources compiled into both the Watch app and the widget extension |
