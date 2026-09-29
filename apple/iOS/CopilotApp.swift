@@ -20,7 +20,8 @@ struct CopilotApp: App {
     DraftView(showCamera: $showCamera)
      .environment(store)
      .fullScreenCover(isPresented: $showCamera) {
-      CameraView().environment(store)
+      // Apple's document scanner (see DocumentScannerView for why not our own camera).
+      DocumentScannerView().environment(store).ignoresSafeArea()
      }
      .task { await store.refresh() }
      // aicopilot://camera - from a Shortcuts "Open URLs" action on the Action Button.

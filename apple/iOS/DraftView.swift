@@ -39,7 +39,7 @@ struct DraftView: View {
       Button {
        showCamera = true
       } label: {
-       Label(store.tiles.isEmpty ? "Take photo" : "Add photo", systemImage: "camera.fill")
+       Label(store.tiles.isEmpty ? "Scan pages" : "Scan more", systemImage: "doc.viewfinder")
         .frame(maxWidth: .infinity)
       }
       // Photo Library (spec 21): several images at once, numbered in the order you tap them
